@@ -1,10 +1,10 @@
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import React, { useState } from 'react';
-import Modal from '../components/Common/Modal';
+import { useState } from 'react';
+import CreateUserModal from '../components/CreateUserModal';
 import UserCard from '../components/UserCard';
-import { User } from '../types/user.types';
 import { AccountWithBalance } from '../types/account.types';
+import { User } from '../types/user.types';
 import { formatCentsAsCurrency } from '../utils/currencyUtils';
 
 type LoginProps = {
@@ -23,20 +23,6 @@ export default function Login({
   onCreateUser,
 }: LoginProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newUserName, setNewUserName] = useState('');
-  const [error, setError] = useState('');
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newUserName.trim()) {
-      setError('Informe o nome do usuário.');
-      return;
-    }
-    onCreateUser(newUserName);
-    setNewUserName('');
-    setError('');
-    setIsModalOpen(false);
-  }
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-100">
@@ -90,50 +76,7 @@ export default function Login({
         <FontAwesomeIcon icon={faPlus} size="xs" />
       </button>
 
-      {/* Modal de novo usuário */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Novo usuário"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block mb-1 text-sm font-medium text-slate-700">
-              Nome
-            </label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={newUserName}
-              onChange={(e) => {
-                setNewUserName(e.target.value);
-                setError('');
-              }}
-              autoFocus
-            />
-            {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
-              onClick={() => {
-                setIsModalOpen(false);
-                setError('');
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-500"
-            >
-              Salvar
-            </button>
-          </div>
-        </form>
-      </Modal>
+      <CreateUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onCreateUser={onCreateUser} />
     </div>
   );
 }

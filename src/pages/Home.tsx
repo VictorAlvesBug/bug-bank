@@ -1,15 +1,14 @@
 import { faSignOut } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useMemo, useState } from 'react';
+import CheckingAccountCard from '../components/CheckingAccountCard';
 import Button from '../components/Common/Button';
+import InvestmentAccountCard from '../components/InvestmentAccountCard';
 import MoneyModal from '../components/MoneyModal';
 import TransactionCard from '../components/TransactionCard';
-import {
-  AccountWithBalance
-} from '../types/account.types';
+import { AccountWithBalance } from '../types/account.types';
 import { MoneyActionMode, Transaction } from '../types/transaction.types';
 import { User } from '../types/user.types';
-import { formatCentsAsCurrency } from '../utils/currencyUtils';
 
 type HomeProps = {
   user: User;
@@ -21,7 +20,11 @@ type HomeProps = {
   onLogout: () => void;
   onDeposit: (amount: number) => void;
   onWithdraw: (amount: number) => void;
-  onPix: (receiverUserId: string, amount: number, comment: string | undefined) => void;
+  onPix: (
+    receiverUserId: string,
+    amount: number,
+    comment: string | undefined
+  ) => void;
 };
 
 export default function Home({
@@ -37,18 +40,23 @@ export default function Home({
   onPix,
 }: HomeProps) {
   const [moneyModalOpen, setMoneyModalOpen] = useState(false);
-  const [moneyModalMode, setMoneyModalMode] = useState<MoneyActionMode>("Deposit");
-  const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(null);
+  const [moneyModalMode, setMoneyModalMode] =
+    useState<MoneyActionMode>('Deposit');
+  const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(
+    null
+  );
 
-  const userAccountIds = useMemo((): string[] => [
-    checkingAccount.id,
-    investmentAccount.id
-  ], [checkingAccount.id, investmentAccount.id]);
+  const userAccountIds = useMemo(
+    (): string[] => [checkingAccount.id, investmentAccount.id],
+    [checkingAccount.id, investmentAccount.id]
+  );
 
   const userTransactions = useMemo(
     () =>
       transactions.filter(
-        (tran) => userAccountIds.includes(tran.senderAccountId || "") || userAccountIds.includes(tran.receiverAccountId)
+        (tran) =>
+          userAccountIds.includes(tran.senderAccountId || '') ||
+          userAccountIds.includes(tran.receiverAccountId)
       ),
     [transactions, userAccountIds]
   );
@@ -56,17 +64,17 @@ export default function Home({
   const otherUsers = allUsers.filter((u) => u.id !== user.id);
 
   function openDeposit() {
-    setMoneyModalMode("Deposit");
+    setMoneyModalMode('Deposit');
     setMoneyModalOpen(true);
   }
 
   function openWithdraw() {
-    setMoneyModalMode("Withdraw");
+    setMoneyModalMode('Withdraw');
     setMoneyModalOpen(true);
   }
 
   function openPix() {
-    setMoneyModalMode("Pix");
+    setMoneyModalMode('Pix');
     if (!pixReceiverUserId && otherUsers[0]) {
       setPixReceiverUserId(otherUsers[0].id);
     }
@@ -74,13 +82,13 @@ export default function Home({
   }
 
   function handleMoneyAction(amount: number, comment: string | undefined) {
-    if (moneyModalMode === "Deposit") {
+    if (moneyModalMode === 'Deposit') {
       onDeposit(amount);
-    } else if (moneyModalMode === "Withdraw") {
+    } else if (moneyModalMode === 'Withdraw') {
       onWithdraw(amount);
-    } else if (moneyModalMode === "Pix") {
+    } else if (moneyModalMode === 'Pix') {
       if (!pixReceiverUserId) {
-        alert("Selecione um destinatário.");
+        alert('Selecione um destinatário.');
         return;
       }
       onPix(pixReceiverUserId, amount, comment);
@@ -98,44 +106,37 @@ export default function Home({
           className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
           onClick={onLogout}
         >
-          <FontAwesomeIcon icon={faSignOut}/>
+          <FontAwesomeIcon icon={faSignOut} />
         </button>
       </header>
 
       <main className="flex-1 p-4 space-y-4">
         {/* Saldo principal */}
         <section className="space-y-3">
-          <div className="p-4 text-white bg-indigo-600 shadow rounded-2xl">
-            <p className="text-xs text-indigo-100">Conta corrente</p>
-            <p className="mt-1 text-2xl font-semibold">
-              {formatCentsAsCurrency(checkingAccount.balance)}
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-white border shadow-sm rounded-2xl border-slate-100">
-            <div>
-              <p className="text-xs text-slate-500">Valor investido</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {formatCentsAsCurrency(investmentAccount.balance)}
-              </p>
-            </div>
-            <span className="px-2 py-1 text-xs rounded-full text-emerald-500 bg-emerald-50">
-              Simulação
-            </span>
-          </div>
+          <CheckingAccountCard checkingAccount={checkingAccount} />
+          <InvestmentAccountCard investmentAccount={investmentAccount} />
         </section>
 
         {/* Botões de ação */}
         <section className="space-y-3">
           <div className="flex gap-2">
-            <Button onClick={openDeposit} className="bg-emerald-500 hover:bg-emerald-400">
+            <Button
+              onClick={openDeposit}
+              className="bg-emerald-500 hover:bg-emerald-400"
+            >
               Depositar
             </Button>
-            <Button onClick={openWithdraw} className="bg-rose-500 hover:bg-rose-400">
+            <Button
+              onClick={openWithdraw}
+              className="bg-rose-500 hover:bg-rose-400"
+            >
               Sacar
             </Button>
-            <Button onClick={openPix} className="bg-indigo-600 shadow rounded-xl hover:bg-indigo-500"
-              disabled={otherUsers.length === 0}>
+            <Button
+              onClick={openPix}
+              className="bg-indigo-600 shadow rounded-xl hover:bg-indigo-500"
+              disabled={otherUsers.length === 0}
+            >
               Pix
             </Button>
           </div>
@@ -158,7 +159,15 @@ export default function Home({
           ) : (
             <ul className="space-y-2">
               {userTransactions.slice(0, 10).map((transaction) => {
-                return <TransactionCard key={transaction.id} transaction={transaction} allUsers={allUsers} allAccounts={allAccounts} checkingAccount={checkingAccount} />
+                return (
+                  <TransactionCard
+                    key={transaction.id}
+                    transaction={transaction}
+                    allUsers={allUsers}
+                    allAccounts={allAccounts}
+                    checkingAccount={checkingAccount}
+                  />
+                );
               })}
             </ul>
           )}

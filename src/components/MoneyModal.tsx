@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { MoneyActionMode } from "../types/transaction.types";
-import { User } from "../types/user.types";
-import Modal from "./Common/Modal";
-import { formatCentsAsCurrency, getRawCents } from "../utils/currencyUtils";
+import { useEffect, useState } from 'react';
+import { MoneyActionMode } from '../types/transaction.types';
+import { User } from '../types/user.types';
+import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
+import Modal from './Common/Modal';
 
 type MoneyModalProps = {
   isOpen: boolean;
@@ -26,51 +26,49 @@ export default function MoneyModal({
   onClose,
 }: MoneyModalProps) {
   const [value, setValue] = useState(0);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setValue(0);
-    setError("");
-  }, [mode, setValue, setError])
+    setError('');
+  }, [mode, setValue, setError]);
 
   if (!isOpen) return null;
 
   const title =
-    mode === "Deposit"
-      ? "Depósito"
-      : mode === "Withdraw"
-      ? "Saque"
-      : mode === "Pix"
-      ? "Pix"
-      : "";
+    mode === 'Deposit'
+      ? 'Depósito'
+      : mode === 'Withdraw'
+      ? 'Saque'
+      : mode === 'Pix'
+      ? 'Pix'
+      : '';
 
   const description =
-    mode === "Deposit"
-      ? "Informe o valor que deseja depositar na conta."
-      : mode === "Withdraw"
-      ? "Informe o valor que deseja sacar da conta."
-      : "Informe o valor do Pix e selecione o destinatário.";
-
-  const parsed = value || 0;
+    mode === 'Deposit'
+      ? 'Informe o valor que deseja depositar na conta.'
+      : mode === 'Withdraw'
+      ? 'Informe o valor que deseja sacar da conta.'
+      : 'Informe o valor do Pix e selecione o destinatário.';
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (isNaN(parsed) || parsed <= 0) {
-      setError("Informe um valor maior que zero.");
+    if (isNaN(value) || value <= 0) {
+      setError('Informe um valor maior que zero.');
       return;
     }
-    if ((mode === "Withdraw" || mode === "Pix") && parsed > currentBalance) {
-      setError("Valor maior que o saldo disponível.");
+    if ((mode === 'Withdraw' || mode === 'Pix') && value > currentBalance) {
+      setError('Valor maior que o saldo disponível.');
       return;
     }
-    if (mode === "Pix" && !selectedPixReceiverUserId) {
-      setError("Selecione um destinatário.");
+    if (mode === 'Pix' && !selectedPixReceiverUserId) {
+      setError('Selecione um destinatário.');
       return;
     }
 
-    onConfirm(parsed, "");
+    onConfirm(value, '');
     setValue(0);
-    setError("");
+    setError('');
     onClose();
   }
 
@@ -78,7 +76,7 @@ export default function MoneyModal({
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <p className="mb-2 text-xs text-slate-500">{description}</p>
       <p className="mb-3 text-xs text-slate-500">
-        Saldo em conta:{" "}
+        Saldo em conta:{' '}
         <span className="font-semibold">
           {formatCentsAsCurrency(currentBalance)}
         </span>
@@ -97,19 +95,19 @@ export default function MoneyModal({
             value={formatCentsAsCurrency(value)}
             onChange={(e) => {
               setValue(getRawCents(e.target.value));
-              setError("");
+              setError('');
             }}
           />
         </div>
 
-        {mode === "Pix" && (
+        {mode === 'Pix' && (
           <div>
             <label className="block mb-1 text-xs font-medium text-slate-700">
               Destinatário
             </label>
             <select
               className="w-full px-3 py-2 text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={selectedPixReceiverUserId ?? ""}
+              value={selectedPixReceiverUserId ?? ''}
               onChange={(e) =>
                 onChangePixReceiverUser(
                   e.target.value ? String(e.target.value) : null
