@@ -1,0 +1,253 @@
+import { useEffect, useMemo, useState } from 'react';
+import useLocalStorage from '../hooks/useLocalStorage';
+import { useNavigate } from 'react-router-dom';
+import { User } from '../types/user.types';
+import useUserService from '../hooks/useUserService';
+import {
+  Account,
+  AccountWithBalance,
+} from '../types/account.types';
+import useAccountService from '../hooks/useAccountService';
+import useTransactionService from '../hooks/useTransactionService';
+import { MoneyActionMode, Transaction } from '../types/transaction.types';
+import { formatCentsAsCurrency } from '../utils/currencyUtils';
+import { formatDate } from '../utils/dateUtils';
+import MoneyModal from '../components/MoneyModal';
+
+type HomeProps = {
+  user: User;
+  checkingAccount: AccountWithBalance;
+  investmentAccount: AccountWithBalance;
+  allUsers: User[];
+  allAccounts: Account[];
+  transactions: Transaction[];
+  onLogout: () => void;
+  onDeposit: (amount: number) => void;
+  onWithdraw: (amount: number) => void;
+  onPix: (receiverUserId: string, amount: number, comment: string | undefined) => void;
+};
+
+export default function Home({
+  user,
+  checkingAccount,
+  investmentAccount,
+  allUsers,
+  allAccounts,
+  transactions,
+  onLogout,
+  onDeposit,
+  onWithdraw,
+  onPix,
+}: HomeProps) {
+  const [moneyModalOpen, setMoneyModalOpen] = useState(false);
+  const [moneyModalMode, setMoneyModalMode] = useState<MoneyActionMode>("Deposit");
+  const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(null);
+
+  const userAccountIds: string[] = [
+    checkingAccount.id,
+    investmentAccount.id
+  ];
+
+  const userTransactions = useMemo(
+    () =>
+      transactions.filter(
+        (tran) => userAccountIds.includes(tran.senderAccountId || "") || userAccountIds.includes(tran.receiverAccountId)
+      ),
+    [transactions, user.id]
+  );
+
+  const otherUsers = allUsers.filter((u) => u.id !== user.id);
+
+  function openDeposit() {
+    setMoneyModalMode("Deposit");
+    setMoneyModalOpen(true);
+  }
+
+  function openWithdraw() {
+    setMoneyModalMode("Withdraw");
+    setMoneyModalOpen(true);
+  }
+
+  function openPix() {
+    setMoneyModalMode("Pix");
+    if (!pixReceiverUserId && otherUsers[0]) {
+      setPixReceiverUserId(otherUsers[0].id);
+    }
+    setMoneyModalOpen(true);
+  }
+
+  function handleMoneyAction(amount: number, comment: string | undefined) {
+    if (moneyModalMode === "Deposit") {
+      onDeposit(amount);
+    } else if (moneyModalMode === "Withdraw") {
+      onWithdraw(amount);
+    } else if (moneyModalMode === "Pix") {
+      if (!pixReceiverUserId) {
+        alert("Selecione um destinatário.");
+        return;
+      }
+      onPix(pixReceiverUserId, amount, comment);
+    }
+  }
+
+  function resolveUserName(id?: string) {
+    if (!id) return "—";
+    return allUsers.find((u) => u.id === id)?.name ?? `Usuário ${id}`;
+  }
+
+  function transactionLabel(transaction: Transaction) {
+    if (transaction.type === "Deposit" && checkingAccount.id === transaction.receiverAccountId) {
+      return "Depósito na sua conta";
+    }
+    if (transaction.type === "Withdraw" && checkingAccount.id === transaction.senderAccountId) {
+      return "Saque da sua conta";
+    }
+    if (transaction.type === "Pix") {
+      const senderAccount = allAccounts.find(acc => acc.id == transaction.senderAccountId);
+      const receiverAccount = allAccounts.find(acc => acc.id == transaction.receiverAccountId);
+      const senderName = resolveUserName(senderAccount?.userId);
+      const receiverName = resolveUserName(receiverAccount?.userId);
+
+      if (checkingAccount.id === transaction.senderAccountId) {
+        return `Pix enviado para ${receiverName}`;
+      }
+      if (checkingAccount.id === transaction.receiverAccountId) {
+        return `Pix recebido de ${senderName}`;
+      }
+      return `Pix entre ${senderName} e ${receiverName}`;
+    }
+    return "Transação";
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen bg-slate-100">
+      <header className="flex items-center justify-between px-4 py-3 bg-white shadow">
+        <div>
+          <p className="text-xs text-slate-500">Olá,</p>
+          <h1 className="text-lg font-semibold text-slate-900">{user.name}</h1>
+        </div>
+        <button
+          className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
+          onClick={onLogout}
+        >
+          Sair
+        </button>
+      </header>
+
+      <main className="flex-1 p-4 space-y-4">
+        {/* Saldo principal */}
+        <section className="space-y-3">
+          <div className="p-4 text-white bg-indigo-600 shadow rounded-2xl">
+            <p className="text-xs text-indigo-100">Conta corrente</p>
+            <p className="mt-1 text-2xl font-semibold">
+              {formatCentsAsCurrency(checkingAccount.balance)}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-white border shadow-sm rounded-2xl border-slate-100">
+            <div>
+              <p className="text-xs text-slate-500">Valor investido</p>
+              <p className="text-lg font-semibold text-slate-900">
+                {formatCentsAsCurrency(investmentAccount.balance)}
+              </p>
+            </div>
+            <span className="px-2 py-1 text-xs rounded-full text-emerald-500 bg-emerald-50">
+              Simulação
+            </span>
+          </div>
+        </section>
+
+        {/* Botões de ação */}
+        <section className="space-y-3">
+          <div className="flex gap-2">
+            <button
+              className="flex-1 py-3 text-sm font-medium text-white transition shadow rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95"
+              onClick={openDeposit}
+            >
+              Depositar
+            </button>
+            <button
+              className="flex-1 py-3 text-sm font-medium text-white transition shadow rounded-xl bg-rose-500 hover:bg-rose-400 active:scale-95"
+              onClick={openWithdraw}
+            >
+              Sacar
+            </button>
+            <button
+              className="flex-1 py-3 text-sm font-medium text-white transition bg-indigo-600 shadow rounded-xl hover:bg-indigo-500 active:scale-95"
+              onClick={openPix}
+              disabled={otherUsers.length === 0}
+            >
+              Pix
+            </button>
+          </div>
+          {otherUsers.length === 0 && (
+            <p className="text-[11px] text-slate-500">
+              Cadastre mais usuários para poder enviar Pix.
+            </p>
+          )}
+        </section>
+
+        {/* Últimas transações */}
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-slate-800">
+            Últimas transações
+          </h2>
+          {userTransactions.length === 0 ? (
+            <p className="text-xs text-slate-500">
+              Nenhuma transação por enquanto. Faça um depósito, saque ou Pix.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {userTransactions.slice(0, 10).map((tran) => {
+                const isOut =
+                  (tran.type === "Withdraw" && tran.senderAccountId === checkingAccount.id) ||
+                  (tran.type === "Pix" && tran.receiverAccountId === checkingAccount.id);
+                const sign = isOut ? "-" : "+";
+
+                return (
+                  <li
+                    key={tran.id}
+                    className="flex items-center justify-between p-3 bg-white border shadow-sm rounded-xl border-slate-100"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">
+                        {transactionLabel(tran)}
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        {formatDate(tran.createdAt)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className={`text-sm font-semibold ${
+                          isOut ? "text-rose-500" : "text-emerald-500"
+                        }`}
+                      >
+                        {sign} {formatCentsAsCurrency(tran.amount)}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {tran.type.toUpperCase()}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </main>
+
+      {/* Modal compartilhado de dinheiro */}
+      <MoneyModal
+        isOpen={moneyModalOpen}
+        mode={moneyModalMode}
+        currentBalance={checkingAccount.balance}
+        users={otherUsers}
+        selectedPixReceiverUserId={pixReceiverUserId}
+        onChangePixReceiverUser={setPixReceiverUserId}
+        onConfirm={handleMoneyAction}
+        onClose={() => setMoneyModalOpen(false)}
+      />
+    </div>
+  );
+}
