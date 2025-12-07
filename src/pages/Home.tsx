@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage';
-import { useNavigate } from 'react-router-dom';
-import { User } from '../types/user.types';
-import useUserService from '../hooks/useUserService';
+import { faSignOut } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useMemo, useState } from 'react';
+import Button from '../components/Common/Button';
+import MoneyModal from '../components/MoneyModal';
 import {
   Account,
   AccountWithBalance,
 } from '../types/account.types';
-import useAccountService from '../hooks/useAccountService';
-import useTransactionService from '../hooks/useTransactionService';
 import { MoneyActionMode, Transaction } from '../types/transaction.types';
+import { User } from '../types/user.types';
 import { formatCentsAsCurrency } from '../utils/currencyUtils';
 import { formatDate } from '../utils/dateUtils';
-import MoneyModal from '../components/MoneyModal';
 
 type HomeProps = {
   user: User;
@@ -43,17 +41,17 @@ export default function Home({
   const [moneyModalMode, setMoneyModalMode] = useState<MoneyActionMode>("Deposit");
   const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(null);
 
-  const userAccountIds: string[] = [
+  const userAccountIds = useMemo((): string[] => [
     checkingAccount.id,
     investmentAccount.id
-  ];
+  ], [checkingAccount.id, investmentAccount.id]);
 
   const userTransactions = useMemo(
     () =>
       transactions.filter(
         (tran) => userAccountIds.includes(tran.senderAccountId || "") || userAccountIds.includes(tran.receiverAccountId)
       ),
-    [transactions, user.id]
+    [transactions, userAccountIds]
   );
 
   const otherUsers = allUsers.filter((u) => u.id !== user.id);
@@ -103,8 +101,8 @@ export default function Home({
       return "Saque da sua conta";
     }
     if (transaction.type === "Pix") {
-      const senderAccount = allAccounts.find(acc => acc.id == transaction.senderAccountId);
-      const receiverAccount = allAccounts.find(acc => acc.id == transaction.receiverAccountId);
+      const senderAccount = allAccounts.find(acc => acc.id === transaction.senderAccountId);
+      const receiverAccount = allAccounts.find(acc => acc.id === transaction.receiverAccountId);
       const senderName = resolveUserName(senderAccount?.userId);
       const receiverName = resolveUserName(receiverAccount?.userId);
 
@@ -130,7 +128,7 @@ export default function Home({
           className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
           onClick={onLogout}
         >
-          Sair
+          <FontAwesomeIcon icon={faSignOut}/>
         </button>
       </header>
 
@@ -160,25 +158,16 @@ export default function Home({
         {/* Botões de ação */}
         <section className="space-y-3">
           <div className="flex gap-2">
-            <button
-              className="flex-1 py-3 text-sm font-medium text-white transition shadow rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95"
-              onClick={openDeposit}
-            >
+            <Button onClick={openDeposit} className="bg-emerald-500 hover:bg-emerald-400">
               Depositar
-            </button>
-            <button
-              className="flex-1 py-3 text-sm font-medium text-white transition shadow rounded-xl bg-rose-500 hover:bg-rose-400 active:scale-95"
-              onClick={openWithdraw}
-            >
+            </Button>
+            <Button onClick={openWithdraw} className="bg-rose-500 hover:bg-rose-400">
               Sacar
-            </button>
-            <button
-              className="flex-1 py-3 text-sm font-medium text-white transition bg-indigo-600 shadow rounded-xl hover:bg-indigo-500 active:scale-95"
-              onClick={openPix}
-              disabled={otherUsers.length === 0}
-            >
+            </Button>
+            <Button onClick={openPix} className="bg-indigo-600 shadow rounded-xl hover:bg-indigo-500"
+              disabled={otherUsers.length === 0}>
               Pix
-            </button>
+            </Button>
           </div>
           {otherUsers.length === 0 && (
             <p className="text-[11px] text-slate-500">

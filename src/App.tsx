@@ -1,5 +1,7 @@
-//import { Routes, Route, Link } from "react-router-dom";
 import { useMemo, useState } from 'react';
+import useAccountsState from './hooks/useAccountsState';
+import useTransactionsState from './hooks/useTransactionsState';
+import useUsersState from './hooks/useUsersState';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import {
@@ -7,15 +9,12 @@ import {
   AccountWithBalance,
   InvestmentOrCheckingAccountType,
 } from './types/account.types';
-import { User } from './types/user.types';
-import { useUsersState } from './hooks/useUserService';
-import { useAccountsState } from './hooks/useAccountService';
-import { useTransactionsState } from './hooks/useTransactionService';
 import { DepositOrWithdraw, Pix } from './types/transaction.types';
+import { User } from './types/user.types';
 
 export default function App() {
   const [users, setUsers] = useUsersState();
-  const [accounts, setAccounts, cashAccount] = useAccountsState();
+  const [accounts, setAccounts] = useAccountsState();
   const [transactions, setTransactions] = useTransactionsState();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -25,55 +24,58 @@ export default function App() {
     [users, currentUserId]
   );
 
-  function calculateBalance(accountId: string): number{
-    const account = accounts.find(acc => acc.id === accountId);
+  const accountsWithBalance = useMemo((): AccountWithBalance[] => {
+    return accounts.map((account) => {
+      const transactionsRelated = transactions.filter((tran) =>
+        [tran.senderAccountId, tran.receiverAccountId].includes(account.id)
+      );
 
-    if (!account) {
-      alert(`Conta '${accountId}' não encontrada`);
-      return 0;
-    }
+      const balance = transactionsRelated.reduce((balance, tran) => {
+        if (tran.receiverAccountId === account.id) return balance + tran.amount;
+        return balance - tran.amount;
+      }, account.initialBalance);
 
-    const transactionsRelated = transactions.filter(tran => 
-      [tran.senderAccountId, tran.receiverAccountId].includes(accountId)
-    )
+      return { ...account, balance };
+    });
+  }, [accounts, transactions]);
 
-    return transactionsRelated.reduce((balance, tran) => {
-      if (tran.receiverAccountId === accountId) 
-        return balance + tran.amount;
-      return balance - tran.amount;
-    }, account.initialBalance)
-  }
+  const cashAccount = useMemo(
+    () => accountsWithBalance.find((acc) => acc.type === 'Cash'),
+    [accountsWithBalance]
+  );
+
+  const nonCashAccounts = useMemo(
+    () => accountsWithBalance.filter((acc) => acc.type !== 'Cash'),
+    [accountsWithBalance]
+  );
 
   const currentCheckingAccount = useMemo(
-    () => {
-      const account = accounts.find((a) => a.userId === currentUserId && a.type === "CheckingAccount")
-      if (!account) 
-        return null;
-
-      const balance = calculateBalance(account.id);
-
-      return {...account, balance} satisfies AccountWithBalance;
-    },
-    [accounts, currentUserId, calculateBalance]
+    () =>
+      nonCashAccounts.find(
+        (a) => a.userId === currentUserId && a.type === 'CheckingAccount'
+      ),
+    [nonCashAccounts, currentUserId]
   );
 
   const currentInvestmentAccount = useMemo(
-    () => {
-      const account = accounts.find((a) => a.userId === currentUserId && a.type === "ImmediateRescueInvestmentAccount")
-      if (!account) 
-        return null;
-
-      const balance = calculateBalance(account.id);
-
-      return {...account, balance} satisfies AccountWithBalance;
-    },
-    [accounts, currentUserId, calculateBalance]
+    () =>
+      nonCashAccounts.find(
+        (a) =>
+          a.userId === currentUserId &&
+          a.type === 'ImmediateRescueInvestmentAccount'
+      ),
+    [nonCashAccounts, currentUserId]
   );
+
+  if (!cashAccount) {
+    alert('Conta de dinheiro físico não encontrada');
+    return null;
+  }
 
   function handleCreateUser(name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
-      alert("Informe o nome do usuário");
+      alert('Informe o nome do usuário');
       return;
     }
 
@@ -109,12 +111,13 @@ export default function App() {
       return;
     }
 
-    const checkingAccount = accounts.find(
-      (acc) => acc.userId === currentUserId && acc.type === 'CheckingAccount'
-    );
-
-    if (!checkingAccount) {
+    if (!currentCheckingAccount) {
       alert('Conta corrente do usuário não encontrada');
+      return;
+    }
+
+    if (!cashAccount) {
+      alert('Conta de dinhero físico não encontrada');
       return;
     }
 
@@ -122,7 +125,7 @@ export default function App() {
       id: crypto.randomUUID(),
       type: 'Deposit',
       senderAccountId: cashAccount.id,
-      receiverAccountId: checkingAccount.id,
+      receiverAccountId: currentCheckingAccount.id,
       amount,
       createdAt: new Date().toISOString(),
     };
@@ -136,18 +139,17 @@ export default function App() {
       return;
     }
 
-    const checkingAccount = accounts.find(
-      (acc) => acc.userId === currentUserId && acc.type === 'CheckingAccount'
-    );
-
-    if (!checkingAccount) {
+    if (!currentCheckingAccount) {
       alert('Conta corrente do usuário não encontrada');
       return;
     }
 
-    const balance = calculateBalance(checkingAccount.id);
+    if (!cashAccount) {
+      alert('Conta de dinhero físico não encontrada');
+      return;
+    }
 
-    if (balance < amount) {
+    if (currentCheckingAccount.balance < amount) {
       alert('Saldo insuficiente para saque.');
       return;
     }
@@ -155,31 +157,31 @@ export default function App() {
     const withdraw: DepositOrWithdraw = {
       id: crypto.randomUUID(),
       type: 'Withdraw',
-      senderAccountId: checkingAccount.id,
+      senderAccountId: currentCheckingAccount.id,
       receiverAccountId: cashAccount.id,
       amount,
       createdAt: new Date().toISOString(),
     };
-    
+
     setTransactions((prev) => [withdraw, ...prev]);
   }
 
-  function handlePix(receiverUserId: string, amount: number, comment: string | undefined = undefined) {
+  function handlePix(
+    receiverUserId: string,
+    amount: number,
+    comment: string | undefined = undefined
+  ) {
     if (amount <= 0) {
       alert('Informe um valor válido para o Pix');
       return;
     }
 
-    const senderAccount = accounts.find(
-      (acc) => acc.userId === currentUserId && acc.type === 'CheckingAccount'
-    );
-
-    if (!senderAccount) {
+    if (!currentCheckingAccount) {
       alert('Conta corrente de origem não encontrada');
       return;
     }
 
-    const receiverAccount = accounts.find(
+    const receiverAccount = nonCashAccounts.find(
       (acc) => acc.userId === receiverUserId && acc.type === 'CheckingAccount'
     );
 
@@ -188,9 +190,7 @@ export default function App() {
       return;
     }
 
-    const senderBalance = calculateBalance(senderAccount.id);
-
-    if (senderBalance < amount) {
+    if (currentCheckingAccount.balance < amount) {
       alert('Saldo insuficiente para Pix.');
       return;
     }
@@ -198,11 +198,11 @@ export default function App() {
     const pix: Pix = {
       id: crypto.randomUUID(),
       type: 'Pix',
-      senderAccountId: senderAccount.id,
+      senderAccountId: currentCheckingAccount.id,
       receiverAccountId: receiverAccount.id,
       amount,
       createdAt: new Date().toISOString(),
-      comment
+      comment,
     };
     setTransactions((prev) => [pix, ...prev]);
   }
@@ -210,7 +210,9 @@ export default function App() {
   if (!currentUser || !currentCheckingAccount || !currentInvestmentAccount) {
     return (
       <Login
+        cashAccount={cashAccount}
         users={users}
+        accounts={nonCashAccounts}
         onSelectUser={setCurrentUserId}
         onCreateUser={handleCreateUser}
       />
@@ -223,7 +225,7 @@ export default function App() {
       checkingAccount={currentCheckingAccount}
       investmentAccount={currentInvestmentAccount}
       allUsers={users}
-      allAccounts={accounts}
+      allAccounts={nonCashAccounts}
       transactions={transactions}
       onLogout={() => setCurrentUserId(null)}
       onDeposit={handleDeposit}
@@ -231,17 +233,4 @@ export default function App() {
       onPix={handlePix}
     />
   );
-  /*return (
-    <>
-      <nav className="flex w-full bg-red-200">
-        <Link to="/home">Home</Link> |{" "}
-        <Link to="/">Login</Link>
-      </nav>
-
-      <Routes>
-        <Route path="/home" element={<Home />} />
-        <Route path="/" element={<Login />} />
-      </Routes>
-    </>
-  );*/
 }

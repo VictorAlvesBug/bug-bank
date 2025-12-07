@@ -1,6 +1,5 @@
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import Button, { type ButtonVariant } from './Button';
 
 type ModalProps = {
   isOpen: boolean;
@@ -14,16 +13,16 @@ export default function Modal({ isOpen, title, children, onClose }: ModalProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40">
-      <div className="w-full max-w-md mx-4 rounded-2xl bg-white p-4 shadow-lg">
+      <div className="w-full max-w-md p-4 mx-4 bg-white shadow-lg rounded-2xl">
         <div className="flex items-center justify-between mb-2">
           {title && (
-            <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+            <h2 className="font-semibold text-md text-slate-900">{title}</h2>
           )}
           <button
             className="text-xs text-slate-400 hover:text-slate-600"
             onClick={onClose}
           >
-            fechar
+            <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
         {children}
