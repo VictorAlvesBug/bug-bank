@@ -207,6 +207,12 @@ export default function App() {
     setTransactions((prev) => [pix, ...prev]);
   }
 
+  function handleResetApp(){
+    localStorage.removeItem("users");
+    localStorage.removeItem("accounts");
+    localStorage.removeItem("transctions");
+  }
+
   if (!currentUser || !currentCheckingAccount || !currentInvestmentAccount) {
     return (
       <Login
@@ -228,6 +234,7 @@ export default function App() {
       allAccounts={nonCashAccounts}
       transactions={transactions}
       onLogout={() => setCurrentUserId(null)}
+      onResetApp={() => handleResetApp()}
       onDeposit={handleDeposit}
       onWithdraw={handleWithdraw}
       onPix={handlePix}
