@@ -3,21 +3,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useMemo, useState } from 'react';
 import Button from '../components/Common/Button';
 import MoneyModal from '../components/MoneyModal';
+import TransactionCard from '../components/TransactionCard';
 import {
-  Account,
-  AccountWithBalance,
+  AccountWithBalance
 } from '../types/account.types';
 import { MoneyActionMode, Transaction } from '../types/transaction.types';
 import { User } from '../types/user.types';
 import { formatCentsAsCurrency } from '../utils/currencyUtils';
-import { formatDate } from '../utils/dateUtils';
 
 type HomeProps = {
   user: User;
   checkingAccount: AccountWithBalance;
   investmentAccount: AccountWithBalance;
   allUsers: User[];
-  allAccounts: Account[];
+  allAccounts: AccountWithBalance[];
   transactions: Transaction[];
   onLogout: () => void;
   onDeposit: (amount: number) => void;
@@ -86,35 +85,6 @@ export default function Home({
       }
       onPix(pixReceiverUserId, amount, comment);
     }
-  }
-
-  function resolveUserName(id?: string) {
-    if (!id) return "—";
-    return allUsers.find((u) => u.id === id)?.name ?? `Usuário ${id}`;
-  }
-
-  function transactionLabel(transaction: Transaction) {
-    if (transaction.type === "Deposit" && checkingAccount.id === transaction.receiverAccountId) {
-      return "Depósito na sua conta";
-    }
-    if (transaction.type === "Withdraw" && checkingAccount.id === transaction.senderAccountId) {
-      return "Saque da sua conta";
-    }
-    if (transaction.type === "Pix") {
-      const senderAccount = allAccounts.find(acc => acc.id === transaction.senderAccountId);
-      const receiverAccount = allAccounts.find(acc => acc.id === transaction.receiverAccountId);
-      const senderName = resolveUserName(senderAccount?.userId);
-      const receiverName = resolveUserName(receiverAccount?.userId);
-
-      if (checkingAccount.id === transaction.senderAccountId) {
-        return `Pix enviado para ${receiverName}`;
-      }
-      if (checkingAccount.id === transaction.receiverAccountId) {
-        return `Pix recebido de ${senderName}`;
-      }
-      return `Pix entre ${senderName} e ${receiverName}`;
-    }
-    return "Transação";
   }
 
   return (
@@ -187,39 +157,8 @@ export default function Home({
             </p>
           ) : (
             <ul className="space-y-2">
-              {userTransactions.slice(0, 10).map((tran) => {
-                const isOut =
-                  (tran.type === "Withdraw" && tran.senderAccountId === checkingAccount.id) ||
-                  (tran.type === "Pix" && tran.receiverAccountId === checkingAccount.id);
-                const sign = isOut ? "-" : "+";
-
-                return (
-                  <li
-                    key={tran.id}
-                    className="flex items-center justify-between p-3 bg-white border shadow-sm rounded-xl border-slate-100"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">
-                        {transactionLabel(tran)}
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {formatDate(tran.createdAt)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={`text-sm font-semibold ${
-                          isOut ? "text-rose-500" : "text-emerald-500"
-                        }`}
-                      >
-                        {sign} {formatCentsAsCurrency(tran.amount)}
-                      </p>
-                      <p className="text-[10px] text-slate-400">
-                        {tran.type.toUpperCase()}
-                      </p>
-                    </div>
-                  </li>
-                );
+              {userTransactions.slice(0, 10).map((transaction) => {
+                return <TransactionCard key={transaction.id} transaction={transaction} allUsers={allUsers} allAccounts={allAccounts} checkingAccount={checkingAccount} />
               })}
             </ul>
           )}

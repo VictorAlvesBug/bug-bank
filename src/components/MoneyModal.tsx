@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MoneyActionMode } from "../types/transaction.types";
 import { User } from "../types/user.types";
 import Modal from "./Common/Modal";
-import { formatCentsAsCurrency } from "../utils/currencyUtils";
+import { formatCentsAsCurrency, getRawCents } from "../utils/currencyUtils";
 
 type MoneyModalProps = {
   isOpen: boolean;
@@ -25,8 +25,13 @@ export default function MoneyModal({
   onConfirm,
   onClose,
 }: MoneyModalProps) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(0);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setValue(0);
+    setError("");
+  }, [mode, setValue, setError])
 
   if (!isOpen) return null;
 
@@ -46,7 +51,7 @@ export default function MoneyModal({
       ? "Informe o valor que deseja sacar da conta."
       : "Informe o valor do Pix e selecione o destinatário.";
 
-  const parsed = parseFloat(value.replace(",", "."));
+  const parsed = value || 0;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,7 +69,7 @@ export default function MoneyModal({
     }
 
     onConfirm(parsed, "");
-    setValue("");
+    setValue(0);
     setError("");
     onClose();
   }
@@ -85,13 +90,13 @@ export default function MoneyModal({
             Valor
           </label>
           <input
-            type="number"
+            type="string"
             step="0.01"
             min="0"
             className="w-full px-3 py-2 text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={value}
+            value={formatCentsAsCurrency(value)}
             onChange={(e) => {
-              setValue(e.target.value);
+              setValue(getRawCents(e.target.value));
               setError("");
             }}
           />

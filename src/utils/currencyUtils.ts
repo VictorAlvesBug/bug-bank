@@ -3,3 +3,5 @@ export const formatCentsAsCurrency = (centsAmount: number) =>
         style: "currency",
         currency: "BRL"
     });
+
+    export const getRawCents = (formatted: string) => Number(formatted.replace(/\D/g, ''));
