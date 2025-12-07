@@ -7,8 +7,8 @@ type CheckingAccountCardProps = {
 
 export default function CheckingAccountCard({checkingAccount}: CheckingAccountCardProps) {
   return (
-    <div className="p-4 text-white bg-indigo-600 shadow rounded-2xl">
-            <p className="text-xs text-indigo-100">Conta corrente</p>
+    <div className="p-4 text-indigo-600 bg-white shadow rounded-2xl">
+            <p className="text-xs text-indigo-500">Conta corrente</p>
             <p className="mt-1 text-2xl font-semibold">
               {formatCentsAsCurrency(checkingAccount.balance)}
             </p>

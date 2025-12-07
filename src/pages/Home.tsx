@@ -114,7 +114,7 @@ export default function Home({
         {/* Saldo principal */}
         <section className="space-y-3">
           <CheckingAccountCard checkingAccount={checkingAccount} />
-          <InvestmentAccountCard investmentAccount={investmentAccount} />
+          {/* <InvestmentAccountCard investmentAccount={investmentAccount} /> */}
         </section>
 
         {/* Botões de ação */}
