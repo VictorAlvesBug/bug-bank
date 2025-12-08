@@ -1,4 +1,4 @@
-import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faArrowTrendUp, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import CreateUserModal from '../components/CreateUserModal';
@@ -6,11 +6,14 @@ import UserCard from '../components/UserCard';
 import { AccountWithBalance } from '../types/account.types';
 import { User } from '../types/user.types';
 import { formatCentsAsCurrency } from '../utils/currencyUtils';
+import { toast } from 'react-toastify';
 
 type LoginProps = {
   cashAccount: AccountWithBalance;
   users: User[];
   accounts: AccountWithBalance[];
+  isInvestmentEnabled: boolean;
+  onChangeInvestmentEnabled: (enabled: boolean) => void;
   onResetApp: () => void;
   onSelectUser: (id: string) => void;
   onCreateUser: (name: string) => void;
@@ -20,6 +23,8 @@ export default function Login({
   cashAccount,
   users,
   accounts,
+  isInvestmentEnabled,
+  onChangeInvestmentEnabled,
   onResetApp,
   onSelectUser,
   onCreateUser,
@@ -31,16 +36,20 @@ export default function Login({
       <header className="flex flex-row items-center justify-between px-4 py-3 bg-white shadow">
         <div className="flex flex-col">
           <h1 className="text-xl font-semibold text-slate-900">Bug Bank</h1>
-          <p className="text-xs text-slate-500">
-            Selecione um usuário
-          </p>
+          <p className="text-xs text-slate-500">Selecione um usuário</p>
         </div>
-          <button
-            className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
-            onClick={onResetApp}
-          >
-            <FontAwesomeIcon icon={faTrash} />
-          </button>
+        <button
+          className="px-2 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
+          onClick={onResetApp}
+        >
+          <FontAwesomeIcon icon={faTrash} />
+        </button>
+        <button
+          className={"px-2 py-1 text-xs border rounded-full " + (isInvestmentEnabled ? "bg-blue-500 text-white border-blue-200 hover:bg-blue-400" : "text-blue-500 border-blue-200 hover:bg-blue-50")}
+          onClick={() => onChangeInvestmentEnabled(!isInvestmentEnabled)}
+        >
+          <FontAwesomeIcon icon={faArrowTrendUp} />
+        </button>
         <div className="flex flex-col items-end">
           <p className="text-xs text-slate-500">Dinheiro em espécie:</p>
           <p className="text-xs text-slate-500">
@@ -68,7 +77,7 @@ export default function Login({
               );
 
               if (!checkingAccount || !investmentAccount) {
-                alert(
+                toast.error(
                   `Conta corrente ou de investimento de ${user.name} não foi encontrada`
                 );
                 return null;

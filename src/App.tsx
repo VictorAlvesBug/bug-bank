@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useAccountsState from './hooks/useAccountsState';
 import useTransactionsState from './hooks/useTransactionsState';
 import useUsersState from './hooks/useUsersState';
@@ -9,15 +9,41 @@ import {
   AccountWithBalance,
   InvestmentOrCheckingAccountType,
 } from './types/account.types';
-import { DepositOrWithdraw, Pix } from './types/transaction.types';
+import {
+  DepositOrWithdraw,
+  Investment,
+  Pix,
+  Rescue,
+  Transaction,
+  Yield,
+} from './types/transaction.types';
 import { User } from './types/user.types';
+import { toast, ToastContainer } from 'react-toastify';
+import useIsInvestmentEnabledState from './hooks/useIsInvestmentEnabledState';
 
 export default function App() {
   const [users, setUsers, resetUsers] = useUsersState();
   const [accounts, setAccounts, resetAccounts] = useAccountsState();
-  const [transactions, setTransactions, resetTransactions] = useTransactionsState();
+  const [transactions, setTransactions, resetTransactions] =
+    useTransactionsState();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isInvestmentEnabled, setIsInvestmentEnabled] =
+    useIsInvestmentEnabledState();
+
+  var onChangeInvestmentEnabled = useCallback(
+    (enabled: boolean) => {
+      setIsInvestmentEnabled(enabled);
+
+      if (enabled) {
+        toast.success(`Recurso de investimento habilitado`);
+        return;
+      }
+
+      toast.success(`Recurso de investimento desabilitado`);
+    },
+    [setIsInvestmentEnabled]
+  );
 
   const currentUser = useMemo(
     () => users.find((u) => u.id === currentUserId) ?? null,
@@ -67,21 +93,90 @@ export default function App() {
     [nonCashAccounts, currentUserId]
   );
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const investmentAccounts = nonCashAccounts.filter(
+        (account) =>
+          account.type === 'ImmediateRescueInvestmentAccount' &&
+          account.balance > 0
+      );
+
+      investmentAccounts.forEach((investmentAccount) => {
+        const yieldRateInAHour = 0.5;
+        const initialYield: Yield = {
+          id: crypto.randomUUID(),
+          type: 'Yield',
+          receiverAccountId: investmentAccount.id,
+          amount: 0,
+          createdAt: new Date().toISOString(),
+        };
+
+        const nonYieldTransactionDates = transactions
+          .filter(
+            (tran) =>
+              tran.receiverAccountId === investmentAccount.id &&
+              tran.type !== 'Yield'
+          )
+          .map((tran) => new Date(tran.createdAt));
+
+        const lastNotYieldTransactionDate = nonYieldTransactionDates.reduce(
+          (max, curr) => (curr > max ? curr : max)
+        );
+
+        let tranList = transactions.filter(
+          (tran) => tran.receiverAccountId === investmentAccount.id
+        );
+        tranList.sort(
+          (tranA: Transaction, tranB: Transaction) =>
+            new Date(tranA.createdAt).getTime() -
+            new Date(tranB.createdAt).getTime()
+        );
+
+        const lastTransaction = tranList.at(-1);
+        const lastYield =
+          lastTransaction?.type === 'Yield' ? lastTransaction : initialYield;
+        lastYield.createdAt = initialYield.createdAt;
+
+        const lastYieldDate = new Date(lastYield.createdAt);
+        const diffInHours =
+          (lastYieldDate.getTime() - lastNotYieldTransactionDate.getTime()) /
+          (1000 * 60 * 60);
+
+        const investmentBalanceWithoutLastYield =
+          investmentAccount.balance - lastYield.amount;
+        lastYield.amount =
+          investmentBalanceWithoutLastYield *
+          (Math.pow(1 + yieldRateInAHour, diffInHours) - 1);
+
+        lastYield.amount = Math.floor(
+          lastYield.amount /*- (lastYield.amount % 100)*/
+        );
+
+        setTransactions((prev) => [
+          lastYield,
+          ...prev.filter((tran) => tran.id !== lastYield.id),
+        ]);
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [nonCashAccounts, setTransactions, transactions]);
+
   if (!cashAccount) {
-    alert('Conta de dinheiro físico não encontrada');
+    toast.error('Conta de dinheiro físico não encontrada');
     return null;
   }
 
   function handleCreateUser(name: string) {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      alert('Informe o nome do usuário');
+    name = name.trim();
+    if (!name) {
+      toast.error('Informe o nome do usuário');
       return;
     }
 
     const newUser: User = {
       id: crypto.randomUUID(),
-      name: trimmed,
+      name,
     };
 
     setUsers((prev) => [...prev, newUser]);
@@ -103,21 +198,23 @@ export default function App() {
       );
       return [...prev, ...newAccounts];
     });
+
+    toast.success(`Seja bem-vindo, ${name}!`);
   }
 
   function handleDeposit(amount: number) {
     if (amount <= 0) {
-      alert('Informe um valor válido para o depósito');
+      toast.error('Informe um valor válido para o depósito');
       return;
     }
 
     if (!currentCheckingAccount) {
-      alert('Conta corrente do usuário não encontrada');
+      toast.error('Conta corrente do usuário não encontrada');
       return;
     }
 
     if (!cashAccount) {
-      alert('Conta de dinhero físico não encontrada');
+      toast.error('Conta de dinhero físico não encontrada');
       return;
     }
 
@@ -135,22 +232,22 @@ export default function App() {
 
   function handleWithdraw(amount: number) {
     if (amount <= 0) {
-      alert('Informe um valor válido para o saque');
+      toast.error('Informe um valor válido para o saque');
       return;
     }
 
     if (!currentCheckingAccount) {
-      alert('Conta corrente do usuário não encontrada');
+      toast.error('Conta corrente do usuário não encontrada');
       return;
     }
 
     if (!cashAccount) {
-      alert('Conta de dinhero físico não encontrada');
+      toast.error('Conta de dinhero físico não encontrada');
       return;
     }
 
     if (currentCheckingAccount.balance < amount) {
-      alert('Saldo insuficiente para saque.');
+      toast.error('Saldo insuficiente para saque.');
       return;
     }
 
@@ -172,12 +269,12 @@ export default function App() {
     comment: string | undefined = undefined
   ) {
     if (amount <= 0) {
-      alert('Informe um valor válido para o Pix');
+      toast.error('Informe um valor válido para o Pix');
       return;
     }
 
     if (!currentCheckingAccount) {
-      alert('Conta corrente de origem não encontrada');
+      toast.error('Conta corrente de origem não encontrada');
       return;
     }
 
@@ -186,12 +283,12 @@ export default function App() {
     );
 
     if (!receiverAccount) {
-      alert('Conta corrente de destino não encontrada');
+      toast.error('Conta corrente de destino não encontrada');
       return;
     }
 
     if (currentCheckingAccount.balance < amount) {
-      alert('Saldo insuficiente para Pix.');
+      toast.error('Saldo insuficiente para Pix.');
       return;
     }
 
@@ -207,37 +304,131 @@ export default function App() {
     setTransactions((prev) => [pix, ...prev]);
   }
 
-  function handleResetApp(){
+  function handleInvest(amount: number) {
+    if (amount <= 0) {
+      toast.error('Informe um valor válido para o investimento');
+      return;
+    }
+
+    if (!currentCheckingAccount) {
+      toast.error('Conta corrente do usuário não encontrada');
+      return;
+    }
+
+    if (!currentInvestmentAccount) {
+      toast.error('Conta de investimento do usuário não encontrada');
+      return;
+    }
+
+    if (currentCheckingAccount.balance < amount) {
+      toast.error('Saldo insuficiente para investimento.');
+      return;
+    }
+
+    const investment: Investment = {
+      id: crypto.randomUUID(),
+      type: 'Investment',
+      senderAccountId: currentCheckingAccount.id,
+      receiverAccountId: currentInvestmentAccount.id,
+      amount,
+      createdAt: new Date().toISOString(),
+    };
+
+    setTransactions((prev) => [investment, ...prev]);
+  }
+
+  function handleRescue(amount: number) {
+    if (amount <= 0) {
+      toast.error('Informe um valor válido para o resgate');
+      return;
+    }
+
+    if (!currentCheckingAccount) {
+      toast.error('Conta corrente do usuário não encontrada');
+      return;
+    }
+
+    if (!currentInvestmentAccount) {
+      toast.error('Conta de investimento do usuário não encontrada');
+      return;
+    }
+
+    if (currentInvestmentAccount.balance < amount) {
+      toast.error('Saldo insuficiente para resgate.');
+      return;
+    }
+
+    const rescue: Rescue = {
+      id: crypto.randomUUID(),
+      type: 'Rescue',
+      senderAccountId: currentInvestmentAccount.id,
+      receiverAccountId: currentCheckingAccount.id,
+      amount,
+      createdAt: new Date().toISOString(),
+    };
+
+    setTransactions((prev) => [rescue, ...prev]);
+  }
+
+  function handleResetApp() {
     resetUsers();
     resetAccounts();
     resetTransactions();
+
+    toast.success(`Os dados do aplicativo foram limpos`);
   }
+
+  const toastContainer = (
+    <ToastContainer
+      position="bottom-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="light"
+    />
+  );
 
   if (!currentUser || !currentCheckingAccount || !currentInvestmentAccount) {
     return (
-      <Login
-        cashAccount={cashAccount}
-        users={users}
-        accounts={nonCashAccounts}
-        onResetApp={handleResetApp}
-        onSelectUser={setCurrentUserId}
-        onCreateUser={handleCreateUser}
-      />
+      <>
+        {toastContainer}
+        <Login
+          cashAccount={cashAccount}
+          users={users}
+          accounts={nonCashAccounts}
+          isInvestmentEnabled={isInvestmentEnabled}
+          onChangeInvestmentEnabled={onChangeInvestmentEnabled}
+          onResetApp={handleResetApp}
+          onSelectUser={setCurrentUserId}
+          onCreateUser={handleCreateUser}
+        />
+      </>
     );
   }
 
   return (
-    <Home
-      user={currentUser}
-      checkingAccount={currentCheckingAccount}
-      investmentAccount={currentInvestmentAccount}
-      allUsers={users}
-      allAccounts={nonCashAccounts}
-      transactions={transactions}
-      onLogout={() => setCurrentUserId(null)}
-      onDeposit={handleDeposit}
-      onWithdraw={handleWithdraw}
-      onPix={handlePix}
-    />
+    <>
+      {toastContainer}
+      <Home
+        user={currentUser}
+        checkingAccount={currentCheckingAccount}
+        investmentAccount={currentInvestmentAccount}
+        allUsers={users}
+        allAccounts={nonCashAccounts}
+        transactions={transactions}
+        isInvestmentEnabled={isInvestmentEnabled}
+        onLogout={() => setCurrentUserId(null)}
+        onDeposit={handleDeposit}
+        onWithdraw={handleWithdraw}
+        onPix={handlePix}
+        onInvest={handleInvest}
+        onRescue={handleRescue}
+      />
+    </>
   );
 }

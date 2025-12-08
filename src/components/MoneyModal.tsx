@@ -7,7 +7,8 @@ import Modal from './Common/Modal';
 type MoneyModalProps = {
   isOpen: boolean;
   mode: MoneyActionMode;
-  currentBalance: number;
+  checkingAccountBalance: number;
+  investmentAccountBalance: number;
   users: User[];
   selectedPixReceiverUserId: string | null;
   onChangePixReceiverUser: (id: string | null) => void;
@@ -18,7 +19,8 @@ type MoneyModalProps = {
 export default function MoneyModal({
   isOpen,
   mode,
-  currentBalance,
+  checkingAccountBalance,
+  investmentAccountBalance,
   users,
   selectedPixReceiverUserId,
   onChangePixReceiverUser,
@@ -35,21 +37,35 @@ export default function MoneyModal({
 
   if (!isOpen) return null;
 
-  const title =
-    mode === 'Deposit'
-      ? 'Depósito'
-      : mode === 'Withdraw'
-      ? 'Saque'
-      : mode === 'Pix'
-      ? 'Pix'
-      : '';
+  let title = '-';
+  let description = '-';
 
-  const description =
-    mode === 'Deposit'
-      ? 'Informe o valor que deseja depositar na conta.'
-      : mode === 'Withdraw'
-      ? 'Informe o valor que deseja sacar da conta.'
-      : 'Informe o valor do Pix e selecione o destinatário.';
+  switch (mode) {
+    case 'Deposit':
+      title = 'Depósito';
+      description = 'Quanto deseja depositar na conta?';
+      break;
+
+    case 'Withdraw':
+      title = 'Saque';
+      description = 'Quanto deseja sacar da conta?';
+      break;
+
+    case 'Pix':
+      title = 'Pix';
+      description = 'Informe o valor do Pix e selecione o destinatário.';
+      break;
+
+    case 'Investment':
+      title = 'Investir';
+      description = 'Quanto deseja investir?';
+      break;
+
+    case 'Rescue':
+      title = 'Resgatar';
+      description = 'Quanto deseja resgatar?';
+      break;
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,8 +73,12 @@ export default function MoneyModal({
       setError('Informe um valor maior que zero.');
       return;
     }
-    if ((mode === 'Withdraw' || mode === 'Pix') && value > currentBalance) {
-      setError('Valor maior que o saldo disponível.');
+    if ((mode === 'Withdraw' || mode === 'Pix' || mode === 'Investment') && value > checkingAccountBalance) {
+      setError('Valor maior que o saldo em conta.');
+      return;
+    }
+    if (mode === 'Rescue' && value > investmentAccountBalance) {
+      setError('Valor maior que o saldo investido.');
       return;
     }
     if (mode === 'Pix' && !selectedPixReceiverUserId) {
@@ -75,13 +95,20 @@ export default function MoneyModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <p className="mb-2 text-xs text-slate-500">{description}</p>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className={`text-xs text-slate-500 ${(mode === 'Investment' || mode === 'Rescue') ? '' : 'mb-3'}`}>
         Saldo em conta:{' '}
         <span className="font-semibold">
-          {formatCentsAsCurrency(currentBalance)}
+          {formatCentsAsCurrency(checkingAccountBalance)}
         </span>
       </p>
-
+      {mode === 'Investment' || mode === 'Rescue' ? (
+        <p className="mb-3 mt-[-3] text-xs text-slate-500">
+          Saldo investido:{' '}
+          <span className="font-semibold">
+            {formatCentsAsCurrency(investmentAccountBalance)}
+          </span>
+        </p>
+      ) : null}
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <label className="block mb-1 text-xs font-medium text-slate-700">
@@ -97,6 +124,7 @@ export default function MoneyModal({
               setValue(getRawCents(e.target.value));
               setError('');
             }}
+            autoFocus
           />
         </div>
 

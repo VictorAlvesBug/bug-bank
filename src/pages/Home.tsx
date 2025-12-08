@@ -9,6 +9,7 @@ import TransactionCard from '../components/TransactionCard';
 import { AccountWithBalance } from '../types/account.types';
 import { MoneyActionMode, Transaction } from '../types/transaction.types';
 import { User } from '../types/user.types';
+import { toast } from 'react-toastify';
 
 type HomeProps = {
   user: User;
@@ -17,6 +18,7 @@ type HomeProps = {
   allUsers: User[];
   allAccounts: AccountWithBalance[];
   transactions: Transaction[];
+  isInvestmentEnabled: boolean;
   onLogout: () => void;
   onDeposit: (amount: number) => void;
   onWithdraw: (amount: number) => void;
@@ -25,6 +27,8 @@ type HomeProps = {
     amount: number,
     comment: string | undefined
   ) => void;
+  onInvest: (amount: number) => void;
+  onRescue: (amount: number) => void;
 };
 
 export default function Home({
@@ -34,10 +38,13 @@ export default function Home({
   allUsers,
   allAccounts,
   transactions,
+  isInvestmentEnabled,
   onLogout,
   onDeposit,
   onWithdraw,
   onPix,
+  onInvest,
+  onRescue
 }: HomeProps) {
   const [moneyModalOpen, setMoneyModalOpen] = useState(false);
   const [moneyModalMode, setMoneyModalMode] =
@@ -81,17 +88,41 @@ export default function Home({
     setMoneyModalOpen(true);
   }
 
+  function openInvest() {
+    setMoneyModalMode('Investment');
+    setMoneyModalOpen(true);
+  }
+
+  function openRescue() {
+    setMoneyModalMode('Rescue');
+    setMoneyModalOpen(true);
+  }
+
   function handleMoneyAction(amount: number, comment: string | undefined) {
-    if (moneyModalMode === 'Deposit') {
-      onDeposit(amount);
-    } else if (moneyModalMode === 'Withdraw') {
-      onWithdraw(amount);
-    } else if (moneyModalMode === 'Pix') {
-      if (!pixReceiverUserId) {
-        alert('Selecione um destinatário.');
-        return;
-      }
-      onPix(pixReceiverUserId, amount, comment);
+    switch (moneyModalMode) {
+      case 'Deposit':
+        onDeposit(amount);
+        break;
+
+      case 'Withdraw':
+        onWithdraw(amount);
+        break;
+
+      case 'Pix':
+        if (!pixReceiverUserId) {
+          toast.error('Selecione um destinatário.');
+          return;
+        }
+        onPix(pixReceiverUserId, amount, comment);
+        break;
+
+      case 'Investment':
+        onInvest(amount);
+        break;
+
+      case 'Rescue':
+        onRescue(amount);
+        break;
     }
   }
 
@@ -105,7 +136,7 @@ export default function Home({
         <button
           className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
           onClick={onLogout}
-          >
+        >
           <FontAwesomeIcon icon={faSignOut} />
         </button>
       </header>
@@ -114,7 +145,13 @@ export default function Home({
         {/* Saldo principal */}
         <section className="space-y-3">
           <CheckingAccountCard checkingAccount={checkingAccount} />
-          {/* <InvestmentAccountCard investmentAccount={investmentAccount} /> */}
+          {isInvestmentEnabled && (
+            <InvestmentAccountCard
+              investmentAccount={investmentAccount}
+              onInvestOpen={openInvest}
+              onRescueOpen={openRescue}
+            />
+          )}
         </section>
 
         {/* Botões de ação */}
@@ -178,7 +215,8 @@ export default function Home({
       <MoneyModal
         isOpen={moneyModalOpen}
         mode={moneyModalMode}
-        currentBalance={checkingAccount.balance}
+        checkingAccountBalance={checkingAccount.balance}
+        investmentAccountBalance={investmentAccount.balance}
         users={otherUsers}
         selectedPixReceiverUserId={pixReceiverUserId}
         onChangePixReceiverUser={setPixReceiverUserId}
