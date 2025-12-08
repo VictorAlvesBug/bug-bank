@@ -1,4 +1,4 @@
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import CreateUserModal from '../components/CreateUserModal';
@@ -11,6 +11,7 @@ type LoginProps = {
   cashAccount: AccountWithBalance;
   users: User[];
   accounts: AccountWithBalance[];
+  onResetApp: () => void;
   onSelectUser: (id: string) => void;
   onCreateUser: (name: string) => void;
 };
@@ -19,6 +20,7 @@ export default function Login({
   cashAccount,
   users,
   accounts,
+  onResetApp,
   onSelectUser,
   onCreateUser,
 }: LoginProps) {
@@ -30,13 +32,17 @@ export default function Login({
         <div className="flex flex-col">
           <h1 className="text-xl font-semibold text-slate-900">Bug Bank</h1>
           <p className="text-xs text-slate-500">
-            Selecione um usuário para entrar
+            Selecione um usuário
           </p>
         </div>
+          <button
+            className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
+            onClick={onResetApp}
+          >
+            <FontAwesomeIcon icon={faTrash} />
+          </button>
         <div className="flex flex-col items-end">
-          <p className="text-xs text-slate-500">
-            Dinheiro em espécie:
-          </p>
+          <p className="text-xs text-slate-500">Dinheiro em espécie:</p>
           <p className="text-xs text-slate-500">
             {formatCentsAsCurrency(cashAccount.balance)}
           </p>
@@ -51,17 +57,32 @@ export default function Login({
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {users.map((user) => {
-              const checkingAccount = accounts.find(acc => acc.userId === user.id && acc.type === "CheckingAccount");
-              const investmentAccount = accounts.find(acc => acc.userId === user.id && acc.type === "ImmediateRescueInvestmentAccount");
+              const checkingAccount = accounts.find(
+                (acc) =>
+                  acc.userId === user.id && acc.type === 'CheckingAccount'
+              );
+              const investmentAccount = accounts.find(
+                (acc) =>
+                  acc.userId === user.id &&
+                  acc.type === 'ImmediateRescueInvestmentAccount'
+              );
 
-              if(!checkingAccount || !investmentAccount){
-                alert(`Conta corrente ou de investimento de ${user.name} não foi encontrada`);
+              if (!checkingAccount || !investmentAccount) {
+                alert(
+                  `Conta corrente ou de investimento de ${user.name} não foi encontrada`
+                );
                 return null;
               }
 
               return (
-              <UserCard key={user.id} onSelectUser={onSelectUser} user={user} checkingAccount={checkingAccount} investmentAccount={investmentAccount} />
-            )
+                <UserCard
+                  key={user.id}
+                  onSelectUser={onSelectUser}
+                  user={user}
+                  checkingAccount={checkingAccount}
+                  investmentAccount={investmentAccount}
+                />
+              );
             })}
           </div>
         )}
@@ -76,7 +97,11 @@ export default function Login({
         <FontAwesomeIcon icon={faPlus} size="xs" />
       </button>
 
-      <CreateUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onCreateUser={onCreateUser} />
+      <CreateUserModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreateUser={onCreateUser}
+      />
     </div>
   );
 }

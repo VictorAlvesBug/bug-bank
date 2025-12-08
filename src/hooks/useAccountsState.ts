@@ -1,14 +1,22 @@
+import { Dispatch, SetStateAction } from 'react';
 import { Account } from '../types/account.types';
 import useLocalStorage from './useLocalStorage';
 
-export default function useAccountsState(){
+export default function useAccountsState(): [
+    Account[],
+    Dispatch<SetStateAction<Account[]>>,
+    () => void
+]{
     const cashAccount: Account = {
         id: 'cash-Cash',
         userId: 'cash',
         type: 'Cash',
         initialBalance: 10_000_00
-    };
-    const initialAccounts: Account[] = [cashAccount];
+    }
+    
+    const [accounts, setAccounts] = useLocalStorage<Account[]>('accounts', [cashAccount]);
 
-    return useLocalStorage<Account[]>('accounts', initialAccounts)
+    const resetAccounts = () => setAccounts([cashAccount]);
+
+    return [accounts, setAccounts, resetAccounts];
 }

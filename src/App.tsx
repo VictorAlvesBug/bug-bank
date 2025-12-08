@@ -13,9 +13,9 @@ import { DepositOrWithdraw, Pix } from './types/transaction.types';
 import { User } from './types/user.types';
 
 export default function App() {
-  const [users, setUsers] = useUsersState();
-  const [accounts, setAccounts] = useAccountsState();
-  const [transactions, setTransactions] = useTransactionsState();
+  const [users, setUsers, resetUsers] = useUsersState();
+  const [accounts, setAccounts, resetAccounts] = useAccountsState();
+  const [transactions, setTransactions, resetTransactions] = useTransactionsState();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -208,9 +208,9 @@ export default function App() {
   }
 
   function handleResetApp(){
-    localStorage.removeItem("users");
-    localStorage.removeItem("accounts");
-    localStorage.removeItem("transctions");
+    resetUsers();
+    resetAccounts();
+    resetTransactions();
   }
 
   if (!currentUser || !currentCheckingAccount || !currentInvestmentAccount) {
@@ -219,6 +219,7 @@ export default function App() {
         cashAccount={cashAccount}
         users={users}
         accounts={nonCashAccounts}
+        onResetApp={handleResetApp}
         onSelectUser={setCurrentUserId}
         onCreateUser={handleCreateUser}
       />
@@ -234,7 +235,6 @@ export default function App() {
       allAccounts={nonCashAccounts}
       transactions={transactions}
       onLogout={() => setCurrentUserId(null)}
-      onResetApp={() => handleResetApp()}
       onDeposit={handleDeposit}
       onWithdraw={handleWithdraw}
       onPix={handlePix}

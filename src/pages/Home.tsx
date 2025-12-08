@@ -1,4 +1,4 @@
-import { faSignOut, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faSignOut } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useMemo, useState } from 'react';
 import CheckingAccountCard from '../components/CheckingAccountCard';
@@ -18,7 +18,6 @@ type HomeProps = {
   allAccounts: AccountWithBalance[];
   transactions: Transaction[];
   onLogout: () => void;
-  onResetApp: () => void;
   onDeposit: (amount: number) => void;
   onWithdraw: (amount: number) => void;
   onPix: (
@@ -36,7 +35,6 @@ export default function Home({
   allAccounts,
   transactions,
   onLogout,
-  onResetApp,
   onDeposit,
   onWithdraw,
   onPix,
@@ -107,13 +105,7 @@ export default function Home({
         <button
           className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
           onClick={onLogout}
-        >
-          <FontAwesomeIcon icon={faTrash} />
-        </button>
-        <button
-          className="px-3 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
-          onClick={onResetApp}
-        >
+          >
           <FontAwesomeIcon icon={faSignOut} />
         </button>
       </header>
