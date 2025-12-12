@@ -1,27 +1,24 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionService from '../hooks/services/useTransactionService';
-import { AccountWithBalance } from '../types/account.types';
-import { DepositOrWithdraw } from '../types/transaction.types';
+import useAccountService from '../hooks/services/useAccountService';
+import { AccountWithBalance, Cash } from '../types/account.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
 
-type WithdrawModalProps = {
+type CashAmountModalProps = {
   isOpen: boolean;
   cashAccount: AccountWithBalance;
-  checkingAccount: AccountWithBalance;
   onClose: () => void;
 };
 
-export default function WithdrawModal({
+export default function CashAmountModal({
   isOpen,
   cashAccount,
-  checkingAccount,
   onClose,
-}: WithdrawModalProps) {
+}: CashAmountModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const transactionService = useTransactionService();
+  const accountService = useAccountService();
 
   useEffect(() => {
     setAmount(0);
@@ -38,36 +35,37 @@ export default function WithdrawModal({
       return;
     }
 
-    if (checkingAccount.balance < amount) {
-      setError('Saldo insuficiente para saque.');
+    if (!cashAccount) {
+      setError('Conta de dinheiro físico não encontrada');
+      return;
+    }
+    if (amount <= 0 || amount < cashAccount.initialBalance - cashAccount.balance) {
+      setError('Informe uma quantia superior ao total em conta dos usuários');
       return;
     }
 
-    const withdraw: DepositOrWithdraw = {
-      id: crypto.randomUUID(),
-      type: 'Withdraw',
-      senderAccountId: checkingAccount.id,
-      receiverAccountId: cashAccount.id,
-      amount,
-      createdAt: new Date().toISOString(),
-    };
+    const {balance, ...newCashAccount} = cashAccount as {
+      balance: number;
+    } & Cash;
 
-    transactionService.add(withdraw);
+    newCashAccount.initialBalance = amount;
 
-    toast.success(`Saque de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
+    accountService.update(newCashAccount);
+
+    toast.success(`Valor total em dinheiro redefinido para ${formatCentsAsCurrency(amount)}`);
 
     onClose();
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={'Saque'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={'Depósito'}>
       <p className="mb-2 text-xs text-slate-500">
-        Quanto deseja sacar da sua conta?
+        Quanto deseja depositar na sua conta?
       </p>
       <p className={`mb-3 text-xs text-slate-500`}>
-        Saldo em conta:{' '}
+        Dinheiro em espécie:{' '}
         <span className="font-semibold">
-          {formatCentsAsCurrency(checkingAccount.balance)}
+          {formatCentsAsCurrency(cashAccount.balance)}
         </span>
       </p>
       <form onSubmit={handleSubmit} className="space-y-3">

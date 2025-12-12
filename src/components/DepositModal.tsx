@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionsState from '../hooks/useTransactionsState';
+import useTransactionService from '../hooks/services/useTransactionService';
 import { AccountWithBalance } from '../types/account.types';
 import { DepositOrWithdraw } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
@@ -19,27 +19,27 @@ export default function DepositModal({
   checkingAccount,
   onClose,
 }: DepositModalProps) {
-  const [value, setValue] = useState(0);
+  const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const setTransactions = useTransactionsState()[1];
+  const transactionService = useTransactionService();
 
   useEffect(() => {
-    setValue(0);
+    setAmount(0);
     setError('');
-  }, [isOpen, setValue, setError]);
+  }, [isOpen, setAmount, setError]);
 
   if (!isOpen) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (isNaN(value) || value <= 0) {
+    if (isNaN(amount) || amount <= 0) {
       setError('Informe um valor maior que zero.');
       return;
     }
 
-    if (value > cashAccount.balance) {
-      setError('Dinhero em espécie insuficiente para depósito');
+    if (amount > cashAccount.balance) {
+      setError('Dinheiro em espécie insuficiente para depósito');
       return;
     }
 
@@ -48,14 +48,14 @@ export default function DepositModal({
       type: 'Deposit',
       senderAccountId: cashAccount.id,
       receiverAccountId: checkingAccount.id,
-      amount: value,
+      amount,
       createdAt: new Date().toISOString(),
     };
 
-    setTransactions((prev) => [deposit, ...prev]);
+    transactionService.add(deposit);
 
     toast.success(
-      `Depósito de ${formatCentsAsCurrency(value)} realizado com sucesso`
+      `Depósito de ${formatCentsAsCurrency(amount)} realizado com sucesso`
     );
 
     onClose();
@@ -82,9 +82,9 @@ export default function DepositModal({
             step="0.01"
             min="0"
             className="w-full px-3 py-2 text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={formatCentsAsCurrency(value)}
+            value={formatCentsAsCurrency(amount)}
             onChange={(e) => {
-              setValue(getRawCents(e.target.value));
+              setAmount(getRawCents(e.target.value));
               setError('');
             }}
             autoFocus

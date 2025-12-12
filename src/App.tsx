@@ -1,33 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import useAccountsState from './hooks/useAccountsState';
-import useTransactionsState from './hooks/useTransactionsState';
-import useUsersState from './hooks/useUsersState';
+import { toast, ToastContainer } from 'react-toastify';
+import useAccountService from './hooks/services/useAccountService';
+import useIsInvestmentEnabledState from './hooks/useIsInvestmentEnabledState';
+import useTransactionService from './hooks/services/useTransactionService';
+import useUserService from './hooks/services/useUserService';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import {
-  Account,
-  AccountWithBalance,
-  Cash,
-  InvestmentOrCheckingAccountType,
+  AccountWithBalance
 } from './types/account.types';
 import {
-  DepositOrWithdraw,
-  Investment,
-  Pix,
-  Rescue,
   Transaction,
-  Yield,
+  Yield
 } from './types/transaction.types';
-import { User } from './types/user.types';
-import { toast, ToastContainer } from 'react-toastify';
-import useIsInvestmentEnabledState from './hooks/useIsInvestmentEnabledState';
-import { formatCentsAsCurrency } from './utils/currencyUtils';
 
 export default function App() {
-  const [users, setUsers, resetUsers] = useUsersState();
-  const [accounts, setAccounts, resetAccounts] = useAccountsState();
-  const [transactions, setTransactions, resetTransactions] =
-    useTransactionsState();
+  const userService = useUserService();
+  const accountService = useAccountService();
+  const transactionService = useTransactionService();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isInvestmentEnabled, setIsInvestmentEnabled] =
@@ -48,15 +38,13 @@ export default function App() {
   );
 
   const currentUser = useMemo(
-    () => users.find((u) => u.id === currentUserId) ?? null,
-    [users, currentUserId]
+    () => userService.getById(currentUserId),
+    [userService, currentUserId]
   );
 
   const accountsWithBalance = useMemo((): AccountWithBalance[] => {
-    return accounts.map((account) => {
-      const transactionsRelated = transactions.filter((tran) =>
-        [tran.senderAccountId, tran.receiverAccountId].includes(account.id)
-      );
+    return accountService.listAll().map((account) => {
+      const transactionsRelated = transactionService.listByAccountIds([account.id]);
 
       const balance = transactionsRelated.reduce((balance, tran) => {
         if (tran.receiverAccountId === account.id) return balance + tran.amount;
@@ -65,7 +53,7 @@ export default function App() {
 
       return { ...account, balance };
     });
-  }, [accounts, transactions]);
+  }, [accountService, transactionService]);
 
   const cashAccount = useMemo(
     () => accountsWithBalance.find((acc) => acc.type === 'Cash'),
@@ -102,6 +90,7 @@ export default function App() {
           account.type === 'ImmediateRescueInvestmentAccount' &&
           account.balance > 0
       );
+      console.log(123, nonCashAccounts);
 
       investmentAccounts.forEach((investmentAccount) => {
         const yieldRateInAHour = 0.5;
@@ -113,7 +102,7 @@ export default function App() {
           createdAt: new Date().toISOString(),
         };
 
-        const nonYieldTransactionDates = transactions
+        const nonYieldTransactionDates = transactionService.listAll()
           .filter(
             (tran) =>
               tran.receiverAccountId === investmentAccount.id &&
@@ -125,7 +114,7 @@ export default function App() {
           (max, curr) => (curr > max ? curr : max)
         );
 
-        let tranList = transactions.filter(
+        let tranList = transactionService.listAll().filter(
           (tran) => tran.receiverAccountId === investmentAccount.id
         );
         tranList.sort(
@@ -154,272 +143,15 @@ export default function App() {
           lastYield.amount /*- (lastYield.amount % 100)*/
         );
 
-        setTransactions((prev) => [
-          lastYield,
-          ...prev.filter((tran) => tran.id !== lastYield.id),
-        ]);
+        transactionService.update(lastYield);
       });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [nonCashAccounts, setTransactions, transactions]);
-
+  }, [nonCashAccounts, transactionService]);
   if (!cashAccount) {
     toast.error('Conta de dinheiro físico não encontrada');
     return null;
-  }
-
-  function handleCreateUser(name: string) {
-    name = name.trim();
-    if (!name) {
-      toast.error('Informe o nome do usuário');
-      return;
-    }
-
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      name,
-    };
-
-    setUsers((prev) => [...prev, newUser]);
-
-    setAccounts((prev) => {
-      const newAccounts = (
-        [
-          'CheckingAccount',
-          'ImmediateRescueInvestmentAccount',
-        ] satisfies InvestmentOrCheckingAccountType[]
-      ).map<Account>(
-        (accountType) =>
-          ({
-            id: `${newUser.id}-${accountType}`,
-            userId: newUser.id,
-            type: accountType satisfies InvestmentOrCheckingAccountType,
-            initialBalance: 0,
-          } satisfies Account)
-      );
-      return [...prev, ...newAccounts];
-    });
-
-    toast.success(`Seja bem-vindo, ${name}!`);
-  }
-
-  /*function handleDeposit(amount: number) {
-    if (amount <= 0) {
-      toast.error('Informe um valor válido para o depósito');
-      return;
-    }
-
-    if (!currentCheckingAccount) {
-      toast.error('Conta corrente do usuário não encontrada');
-      return;
-    }
-
-    if (!cashAccount) {
-      toast.error('Conta de dinhero físico não encontrada');
-      return;
-    }
-
-    if (!cashAccount) {
-      toast.error('Conta de dinhero físico não encontrada');
-      return;
-    }
-
-    if (amount > cashAccount.balance) {
-      toast.error('Dinhero em espécie insuficiente para depósito');
-      return;
-    }
-
-    const deposit: DepositOrWithdraw = {
-      id: crypto.randomUUID(),
-      type: 'Deposit',
-      senderAccountId: cashAccount.id,
-      receiverAccountId: currentCheckingAccount.id,
-      amount,
-      createdAt: new Date().toISOString(),
-    };
-
-    setTransactions((prev) => [deposit, ...prev]);
-
-    toast.success(`Depósito de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
-  }*/
-
-  /*function handleWithdraw(amount: number) {
-    if (amount <= 0) {
-      toast.error('Informe um valor válido para o saque');
-      return;
-    }
-
-    if (!currentCheckingAccount) {
-      toast.error('Conta corrente do usuário não encontrada');
-      return;
-    }
-
-    if (!cashAccount) {
-      toast.error('Conta de dinhero físico não encontrada');
-      return;
-    }
-
-    if (currentCheckingAccount.balance < amount) {
-      toast.error('Saldo insuficiente para saque.');
-      return;
-    }
-
-    const withdraw: DepositOrWithdraw = {
-      id: crypto.randomUUID(),
-      type: 'Withdraw',
-      senderAccountId: currentCheckingAccount.id,
-      receiverAccountId: cashAccount.id,
-      amount,
-      createdAt: new Date().toISOString(),
-    };
-
-    setTransactions((prev) => [withdraw, ...prev]);
-
-    toast.success(`Saque de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
-  }*/
-
-  /*function handlePix(
-    receiverUserId: string,
-    amount: number,
-    comment: string | undefined = undefined
-  ) {
-    if (amount <= 0) {
-      toast.error('Informe um valor válido para o Pix');
-      return;
-    }
-
-    if (!currentCheckingAccount) {
-      toast.error('Conta corrente de origem não encontrada');
-      return;
-    }
-
-    const receiverAccount = nonCashAccounts.find(
-      (acc) => acc.userId === receiverUserId && acc.type === 'CheckingAccount'
-    );
-
-    if (!receiverAccount) {
-      toast.error('Conta corrente de destino não encontrada');
-      return;
-    }
-
-    if (currentCheckingAccount.balance < amount) {
-      toast.error('Saldo insuficiente para Pix.');
-      return;
-    }
-
-    const pix: Pix = {
-      id: crypto.randomUUID(),
-      type: 'Pix',
-      senderAccountId: currentCheckingAccount.id,
-      receiverAccountId: receiverAccount.id,
-      amount,
-      createdAt: new Date().toISOString(),
-      comment,
-    };
-
-    setTransactions((prev) => [pix, ...prev]);
-
-    toast.success(`Pix de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
-  }*/
-
-  function handleInvest(amount: number) {
-    if (amount <= 0) {
-      toast.error('Informe um valor válido para o investimento');
-      return;
-    }
-
-    if (!currentCheckingAccount) {
-      toast.error('Conta corrente do usuário não encontrada');
-      return;
-    }
-
-    if (!currentInvestmentAccount) {
-      toast.error('Conta de investimento do usuário não encontrada');
-      return;
-    }
-
-    if (currentCheckingAccount.balance < amount) {
-      toast.error('Saldo insuficiente para investimento.');
-      return;
-    }
-
-    const investment: Investment = {
-      id: crypto.randomUUID(),
-      type: 'Investment',
-      senderAccountId: currentCheckingAccount.id,
-      receiverAccountId: currentInvestmentAccount.id,
-      amount,
-      createdAt: new Date().toISOString(),
-    };
-
-    setTransactions((prev) => [investment, ...prev]);
-
-    toast.success(`Investimento de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
-  }
-
-  function handleRescue(amount: number) {
-    if (amount <= 0) {
-      toast.error('Informe um valor válido para o resgate');
-      return;
-    }
-
-    if (!currentCheckingAccount) {
-      toast.error('Conta corrente do usuário não encontrada');
-      return;
-    }
-
-    if (!currentInvestmentAccount) {
-      toast.error('Conta de investimento do usuário não encontrada');
-      return;
-    }
-
-    if (currentInvestmentAccount.balance < amount) {
-      toast.error('Saldo insuficiente para resgate.');
-      return;
-    }
-
-    const rescue: Rescue = {
-      id: crypto.randomUUID(),
-      type: 'Rescue',
-      senderAccountId: currentInvestmentAccount.id,
-      receiverAccountId: currentCheckingAccount.id,
-      amount,
-      createdAt: new Date().toISOString(),
-    };
-
-    setTransactions((prev) => [rescue, ...prev]);
-
-    toast.success(`Resgate de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
-  }
-
-  function handleChangeCashValue(amount: number) {
-    if (!cashAccount) {
-      toast.error('Conta de dinheiro físico não encontrada');
-      return;
-    }
-    if (amount <= 0 || amount < cashAccount.initialBalance - cashAccount.balance) {
-      toast.error('Informe uma quantia superior ao total em conta dos usuários');
-      return;
-    }
-
-    const {balance, ...newCashAccount} = cashAccount as {
-      balance: number;
-    } & Cash;
-
-    newCashAccount.initialBalance = amount;
-
-    setAccounts((prev) => [newCashAccount, ...prev.filter(acc => acc.id !== newCashAccount.id)]);
-
-    toast.success(`Valor total em dinheiro redefinido para ${formatCentsAsCurrency(amount)}`);
-  }
-
-  function handleResetApp() {
-    resetUsers();
-    resetAccounts();
-    resetTransactions();
-
-    toast.success(`Os dados do aplicativo foram limpos`);
   }
 
   const toastContainer = (
@@ -443,14 +175,10 @@ export default function App() {
         {toastContainer}
         <Login
           cashAccount={cashAccount}
-          users={users}
           accounts={nonCashAccounts}
           isInvestmentEnabled={isInvestmentEnabled}
           onChangeInvestmentEnabled={onChangeInvestmentEnabled}
-          onResetApp={handleResetApp}
           onSelectUser={setCurrentUserId}
-          onCreateUser={handleCreateUser}
-          onChangeCashValue={handleChangeCashValue}
         />
       </>
     );
@@ -464,14 +192,9 @@ export default function App() {
         cashAccount={cashAccount}
         checkingAccount={currentCheckingAccount}
         investmentAccount={currentInvestmentAccount}
-        allUsers={users}
         allAccounts={nonCashAccounts}
-        transactions={transactions}
-        setTransactions={setTransactions}
         isInvestmentEnabled={isInvestmentEnabled}
         onLogout={() => setCurrentUserId(null)}
-        onInvest={handleInvest}
-        onRescue={handleRescue}
       />
     </>
   );

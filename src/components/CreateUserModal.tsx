@@ -1,27 +1,62 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
+import useAccountService from '../hooks/services/useAccountService';
+import useUserService from '../hooks/services/useUserService';
+import {
+  Account,
+  InvestmentOrCheckingAccountType,
+} from '../types/account.types';
+import { User } from '../types/user.types';
 import Modal from './Common/Modal';
 
 type CreateUserModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onCreateUser: (name: string) => void;
 };
 
 export default function CreateUserModal({
   isOpen,
   onClose,
-  onCreateUser,
 }: CreateUserModalProps) {
   const [newUserName, setNewUserName] = useState('');
   const [error, setError] = useState('');
+  const userService = useUserService();
+  const accountService = useAccountService();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!newUserName.trim()) {
-      setError('Informe o nome do usuário.');
+
+    var name = newUserName.trim();
+
+    if (!name) {
+      setError('Informe o nome do usuário');
       return;
     }
-    onCreateUser(newUserName);
+
+    const newUser: User = {
+      id: crypto.randomUUID(),
+      name,
+    };
+
+    userService.add(newUser);
+
+    const accountTypes: InvestmentOrCheckingAccountType[] = [
+      'CheckingAccount',
+      'ImmediateRescueInvestmentAccount',
+    ];
+    accountTypes
+      .map<Account>(
+        (accountType): Account => ({
+          id: `${newUser.id}-${accountType}`,
+          userId: newUser.id,
+          type: accountType,
+          initialBalance: 0,
+        })
+      )
+      .forEach(accountService.add);
+
+    toast.success(`Seja bem-vindo, ${name}!`);
+
     setNewUserName('');
     setError('');
     onClose();

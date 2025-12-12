@@ -5,13 +5,13 @@ import { formatCentsAsCurrency } from "../utils/currencyUtils";
 
 type InvestmentAccountCardProps = {
     investmentAccount: AccountWithBalance;
-    onInvestOpen: () => void;
+    onInvestmentOpen: () => void;
     onRescueOpen: () => void;
 };
 
 export default function InvestmentAccountCard({
   investmentAccount,
-  onInvestOpen,
+  onInvestmentOpen: onInvestOpen,
   onRescueOpen
 }: InvestmentAccountCardProps) {
   return (

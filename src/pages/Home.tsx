@@ -1,32 +1,28 @@
 import { faSignOut } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Dispatch, SetStateAction, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import CheckingAccountCard from '../components/CheckingAccountCard';
 import Button from '../components/Common/Button';
-import InvestmentAccountCard from '../components/InvestmentAccountCard';
-import MoneyModal from '../components/MoneyModal';
-import TransactionCard from '../components/TransactionCard';
-import { AccountWithBalance } from '../types/account.types';
-import { MoneyActionMode, Transaction } from '../types/transaction.types';
-import { User } from '../types/user.types';
-import { toast } from 'react-toastify';
 import DepositModal from '../components/DepositModal';
-import WithdrawModal from '../components/WithdrawModal';
+import InvestmentAccountCard from '../components/InvestmentAccountCard';
+import InvestmentModal from '../components/InvestmentModal';
+import RescueModal from '../components/RescueModal';
 import SendPixModal from '../components/SendPixModal';
+import TransactionCard from '../components/TransactionCard';
+import WithdrawModal from '../components/WithdrawModal';
+import useTransactionService from '../hooks/services/useTransactionService';
+import useUserService from '../hooks/services/useUserService';
+import { AccountWithBalance } from '../types/account.types';
+import { User } from '../types/user.types';
 
 type HomeProps = {
   user: User;
   cashAccount: AccountWithBalance;
   checkingAccount: AccountWithBalance;
   investmentAccount: AccountWithBalance;
-  allUsers: User[];
   allAccounts: AccountWithBalance[];
-  transactions: Transaction[];
-  setTransactions: Dispatch<SetStateAction<Transaction[]>>;
   isInvestmentEnabled: boolean;
   onLogout: () => void;
-  onInvest: (amount: number) => void;
-  onRescue: (amount: number) => void;
 };
 
 export default function Home({
@@ -34,22 +30,18 @@ export default function Home({
   cashAccount,
   checkingAccount,
   investmentAccount,
-  allUsers,
   allAccounts,
-  transactions,
   isInvestmentEnabled,
   onLogout,
-  onInvest,
-  onRescue
 }: HomeProps) {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const [sendPixModalOpen, setSendPixModalOpen] = useState(false);
-  
+  const [investmentModalOpen, setInvestmentModalOpen] = useState(false);
+  const [rescueModalOpen, setRescueModalOpen] = useState(false);
 
-  const [moneyModalOpen, setMoneyModalOpen] = useState(false);
-  const [moneyModalMode, setMoneyModalMode] =
-    useState<MoneyActionMode>('Deposit');
+  const transactionService = useTransactionService();
+  const userService = useUserService();
 
   const userAccountIds = useMemo(
     (): string[] => [checkingAccount.id, investmentAccount.id],
@@ -58,37 +50,11 @@ export default function Home({
 
   const userTransactions = useMemo(
     () =>
-      transactions.filter(
-        (tran) =>
-          userAccountIds.includes(tran.senderAccountId || '') ||
-          userAccountIds.includes(tran.receiverAccountId)
-      ),
-    [transactions, userAccountIds]
+      transactionService.listByAccountIds(userAccountIds),
+    [transactionService, userAccountIds]
   );
 
-  const otherUsers = allUsers.filter((u) => u.id !== user.id);
-
-  function openInvest() {
-    setMoneyModalMode('Investment');
-    setMoneyModalOpen(true);
-  }
-
-  function openRescue() {
-    setMoneyModalMode('Rescue');
-    setMoneyModalOpen(true);
-  }
-
-  function handleMoneyAction(amount: number, comment: string | undefined) {
-    switch (moneyModalMode) {
-      case 'Investment':
-        onInvest(amount);
-        break;
-
-      case 'Rescue':
-        onRescue(amount);
-        break;
-    }
-  }
+  const otherUsers = userService.listAll().filter((u) => u.id !== user.id);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-100">
@@ -112,8 +78,8 @@ export default function Home({
           {isInvestmentEnabled && (
             <InvestmentAccountCard
               investmentAccount={investmentAccount}
-              onInvestOpen={openInvest}
-              onRescueOpen={openRescue}
+              onInvestmentOpen={() => setInvestmentModalOpen(true)}
+              onRescueOpen={() => setRescueModalOpen(true)}
             />
           )}
         </section>
@@ -164,7 +130,7 @@ export default function Home({
                   <TransactionCard
                     key={transaction.id}
                     transaction={transaction}
-                    allUsers={allUsers}
+                    allUsers={userService.listAll()}
                     allAccounts={allAccounts}
                     checkingAccount={checkingAccount}
                   />
@@ -175,16 +141,6 @@ export default function Home({
         </section>
       </main>
 
-      {/* Modal compartilhado de dinheiro */}
-      <MoneyModal
-        isOpen={moneyModalOpen}
-        mode={moneyModalMode}
-        checkingAccountBalance={checkingAccount.balance}
-        investmentAccountBalance={investmentAccount.balance}
-        users={otherUsers}
-        onConfirm={handleMoneyAction}
-        onClose={() => setMoneyModalOpen(false)}
-      />
       <DepositModal
         isOpen={depositModalOpen}
         cashAccount={cashAccount}
@@ -200,9 +156,20 @@ export default function Home({
       <SendPixModal
         isOpen={sendPixModalOpen}
         senderAccount={checkingAccount}
-        otherUsers={allUsers.filter(u => u.id !== user.id)}
         allAccounts={allAccounts}
         onClose={() => setSendPixModalOpen(false)}
+      />
+      <InvestmentModal
+        isOpen={investmentModalOpen}
+        checkingAccount={checkingAccount}
+        investmentAccount={investmentAccount}
+        onClose={() => setInvestmentModalOpen(false)}
+      />
+      <RescueModal
+        isOpen={rescueModalOpen}
+        checkingAccount={checkingAccount}
+        investmentAccount={investmentAccount}
+        onClose={() => setRescueModalOpen(false)}
       />
     </div>
   );

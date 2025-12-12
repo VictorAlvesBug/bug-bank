@@ -2,23 +2,23 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import useTransactionService from '../hooks/services/useTransactionService';
 import { AccountWithBalance } from '../types/account.types';
-import { DepositOrWithdraw } from '../types/transaction.types';
+import { Investment } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
 
-type WithdrawModalProps = {
+type InvestmentModalProps = {
   isOpen: boolean;
-  cashAccount: AccountWithBalance;
   checkingAccount: AccountWithBalance;
+  investmentAccount: AccountWithBalance;
   onClose: () => void;
 };
 
-export default function WithdrawModal({
+export default function InvestmentModal({
   isOpen,
-  cashAccount,
   checkingAccount,
+  investmentAccount,
   onClose,
-}: WithdrawModalProps) {
+}: InvestmentModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
   const transactionService = useTransactionService();
@@ -39,30 +39,30 @@ export default function WithdrawModal({
     }
 
     if (checkingAccount.balance < amount) {
-      setError('Saldo insuficiente para saque.');
+      setError('Saldo insuficiente para investimento.');
       return;
     }
 
-    const withdraw: DepositOrWithdraw = {
+    const investment: Investment = {
       id: crypto.randomUUID(),
-      type: 'Withdraw',
+      type: 'Investment',
       senderAccountId: checkingAccount.id,
-      receiverAccountId: cashAccount.id,
+      receiverAccountId: investmentAccount.id,
       amount,
       createdAt: new Date().toISOString(),
     };
 
-    transactionService.add(withdraw);
+    transactionService.add(investment);
 
-    toast.success(`Saque de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
+    toast.success(`Investimento de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
 
     onClose();
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={'Saque'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={'Investimento'}>
       <p className="mb-2 text-xs text-slate-500">
-        Quanto deseja sacar da sua conta?
+        Quanto deseja investir?
       </p>
       <p className={`mb-3 text-xs text-slate-500`}>
         Saldo em conta:{' '}

@@ -2,23 +2,23 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import useTransactionService from '../hooks/services/useTransactionService';
 import { AccountWithBalance } from '../types/account.types';
-import { DepositOrWithdraw } from '../types/transaction.types';
+import { Rescue } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
 
-type WithdrawModalProps = {
+type RescueModalProps = {
   isOpen: boolean;
-  cashAccount: AccountWithBalance;
+  investmentAccount: AccountWithBalance;
   checkingAccount: AccountWithBalance;
   onClose: () => void;
 };
 
-export default function WithdrawModal({
+export default function RescueModal({
   isOpen,
-  cashAccount,
+  investmentAccount,
   checkingAccount,
   onClose,
-}: WithdrawModalProps) {
+}: RescueModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
   const transactionService = useTransactionService();
@@ -38,36 +38,40 @@ export default function WithdrawModal({
       return;
     }
 
-    if (checkingAccount.balance < amount) {
-      setError('Saldo insuficiente para saque.');
+    if (amount > investmentAccount.balance) {
+      setError('Saldo investido insuficiente para resgate.');
       return;
     }
 
-    const withdraw: DepositOrWithdraw = {
+    const rescue: Rescue = {
       id: crypto.randomUUID(),
-      type: 'Withdraw',
-      senderAccountId: checkingAccount.id,
-      receiverAccountId: cashAccount.id,
+      type: 'Rescue',
+      senderAccountId: investmentAccount.id,
+      receiverAccountId: checkingAccount.id,
       amount,
       createdAt: new Date().toISOString(),
     };
 
-    transactionService.add(withdraw);
+    console.log(rescue);
 
-    toast.success(`Saque de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
+    transactionService.add(rescue);
+
+    toast.success(
+      `Resgate de ${formatCentsAsCurrency(amount)} realizado com sucesso`
+    );
 
     onClose();
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={'Saque'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={'Resgate'}>
       <p className="mb-2 text-xs text-slate-500">
-        Quanto deseja sacar da sua conta?
+        Quanto deseja resgatar do seu investimento?
       </p>
       <p className={`mb-3 text-xs text-slate-500`}>
-        Saldo em conta:{' '}
+        Saldo investido:{' '}
         <span className="font-semibold">
-          {formatCentsAsCurrency(checkingAccount.balance)}
+          {formatCentsAsCurrency(investmentAccount.balance)}
         </span>
       </p>
       <form onSubmit={handleSubmit} className="space-y-3">

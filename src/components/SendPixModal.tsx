@@ -1,16 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionsState from '../hooks/useTransactionsState';
+import useTransactionService from '../hooks/services/useTransactionService';
+import useUserService from '../hooks/services/useUserService';
 import { AccountWithBalance } from '../types/account.types';
 import { Pix } from '../types/transaction.types';
-import { User } from '../types/user.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
 
 type SendPixModalProps = {
   isOpen: boolean;
   senderAccount: AccountWithBalance;
-  otherUsers: User[];
   allAccounts: AccountWithBalance[];
   onClose: () => void;
 };
@@ -18,37 +17,48 @@ type SendPixModalProps = {
 export default function SendPixModal({
   isOpen,
   senderAccount,
-  otherUsers,
   allAccounts,
   onClose,
 }: SendPixModalProps) {
-  const [value, setValue] = useState(0);
+  const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
   const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(
     null
   );
-  const setTransactions = useTransactionsState()[1];
+  const transactionService = useTransactionService();
+  const userService = useUserService();
+
+  const otherUsers = useMemo(() => {
+    return userService.listAll().filter((u) => u.id !== senderAccount.userId);
+  }, [userService, senderAccount.userId]);
 
   useEffect(() => {
-    setValue(0);
+    setAmount(0);
     setError('');
 
     if (!pixReceiverUserId && otherUsers[0]) {
       setPixReceiverUserId(otherUsers[0].id);
     }
-  }, [isOpen, setValue, setError, pixReceiverUserId, setPixReceiverUserId, otherUsers]);
+  }, [
+    isOpen,
+    setAmount,
+    setError,
+    pixReceiverUserId,
+    setPixReceiverUserId,
+    otherUsers,
+  ]);
 
   if (!isOpen) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (isNaN(value) || value <= 0) {
+    if (isNaN(amount) || amount <= 0) {
       setError('Informe um valor maior que zero.');
       return;
     }
 
-    if (senderAccount.balance < value) {
+    if (senderAccount.balance < amount) {
       setError('Saldo insuficiente para pix.');
       return;
     }
@@ -59,7 +69,8 @@ export default function SendPixModal({
     }
 
     const receiverAccount = allAccounts.find(
-      (acc) => acc.userId === pixReceiverUserId && acc.type === 'CheckingAccount'
+      (acc) =>
+        acc.userId === pixReceiverUserId && acc.type === 'CheckingAccount'
     );
 
     if (!receiverAccount) {
@@ -67,7 +78,7 @@ export default function SendPixModal({
       return;
     }
 
-    if (senderAccount.balance < value) {
+    if (senderAccount.balance < amount) {
       setError('Saldo insuficiente para Pix.');
       return;
     }
@@ -77,15 +88,15 @@ export default function SendPixModal({
       type: 'Pix',
       senderAccountId: senderAccount.id,
       receiverAccountId: receiverAccount.id,
-      amount: value,
+      amount,
       createdAt: new Date().toISOString(),
       //comment: '',
     };
 
-    setTransactions((prev) => [pix, ...prev]);
+    transactionService.add(pix);
 
     toast.success(
-      `Pix de ${formatCentsAsCurrency(value)} realizado com sucesso`
+      `Pix de ${formatCentsAsCurrency(amount)} realizado com sucesso`
     );
 
     onClose();
@@ -112,34 +123,32 @@ export default function SendPixModal({
             step="0.01"
             min="0"
             className="w-full px-3 py-2 text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            value={formatCentsAsCurrency(value)}
+            value={formatCentsAsCurrency(amount)}
             onChange={(e) => {
-              setValue(getRawCents(e.target.value));
+              setAmount(getRawCents(e.target.value));
               setError('');
             }}
             autoFocus
           />
         </div>
 
-            <div>
-            <label className="block mb-1 text-xs font-medium text-slate-700">
-              Destinatário
-            </label>
-            <select
-              className="w-full px-3 py-2 text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={pixReceiverUserId ?? ''}
-              onChange={(e) =>
-                setPixReceiverUserId(e.target.value)
-              }
-            >
-              <option value="">Selecione um usuário</option>
-              {otherUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="block mb-1 text-xs font-medium text-slate-700">
+            Destinatário
+          </label>
+          <select
+            className="w-full px-3 py-2 text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            value={pixReceiverUserId ?? ''}
+            onChange={(e) => setPixReceiverUserId(e.target.value)}
+          >
+            <option value="">Selecione um usuário</option>
+            {otherUsers.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {error && <p className="text-xs text-red-500">{error}</p>}
 
