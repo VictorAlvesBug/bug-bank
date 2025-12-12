@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import useAccountsState from './hooks/useAccountsState';
 import useTransactionsState from './hooks/useTransactionsState';
 import useUsersState from './hooks/useUsersState';
@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import {
   Account,
   AccountWithBalance,
+  Cash,
   InvestmentOrCheckingAccountType,
 } from './types/account.types';
 import {
@@ -20,6 +21,7 @@ import {
 import { User } from './types/user.types';
 import { toast, ToastContainer } from 'react-toastify';
 import useIsInvestmentEnabledState from './hooks/useIsInvestmentEnabledState';
+import { formatCentsAsCurrency } from './utils/currencyUtils';
 
 export default function App() {
   const [users, setUsers, resetUsers] = useUsersState();
@@ -202,7 +204,7 @@ export default function App() {
     toast.success(`Seja bem-vindo, ${name}!`);
   }
 
-  function handleDeposit(amount: number) {
+  /*function handleDeposit(amount: number) {
     if (amount <= 0) {
       toast.error('Informe um valor válido para o depósito');
       return;
@@ -218,6 +220,16 @@ export default function App() {
       return;
     }
 
+    if (!cashAccount) {
+      toast.error('Conta de dinhero físico não encontrada');
+      return;
+    }
+
+    if (amount > cashAccount.balance) {
+      toast.error('Dinhero em espécie insuficiente para depósito');
+      return;
+    }
+
     const deposit: DepositOrWithdraw = {
       id: crypto.randomUUID(),
       type: 'Deposit',
@@ -228,9 +240,11 @@ export default function App() {
     };
 
     setTransactions((prev) => [deposit, ...prev]);
-  }
 
-  function handleWithdraw(amount: number) {
+    toast.success(`Depósito de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
+  }*/
+
+  /*function handleWithdraw(amount: number) {
     if (amount <= 0) {
       toast.error('Informe um valor válido para o saque');
       return;
@@ -261,9 +275,11 @@ export default function App() {
     };
 
     setTransactions((prev) => [withdraw, ...prev]);
-  }
 
-  function handlePix(
+    toast.success(`Saque de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
+  }*/
+
+  /*function handlePix(
     receiverUserId: string,
     amount: number,
     comment: string | undefined = undefined
@@ -301,8 +317,11 @@ export default function App() {
       createdAt: new Date().toISOString(),
       comment,
     };
+
     setTransactions((prev) => [pix, ...prev]);
-  }
+
+    toast.success(`Pix de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
+  }*/
 
   function handleInvest(amount: number) {
     if (amount <= 0) {
@@ -335,6 +354,8 @@ export default function App() {
     };
 
     setTransactions((prev) => [investment, ...prev]);
+
+    toast.success(`Investimento de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
   }
 
   function handleRescue(amount: number) {
@@ -368,6 +389,29 @@ export default function App() {
     };
 
     setTransactions((prev) => [rescue, ...prev]);
+
+    toast.success(`Resgate de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
+  }
+
+  function handleChangeCashValue(amount: number) {
+    if (!cashAccount) {
+      toast.error('Conta de dinheiro físico não encontrada');
+      return;
+    }
+    if (amount <= 0 || amount < cashAccount.initialBalance - cashAccount.balance) {
+      toast.error('Informe uma quantia superior ao total em conta dos usuários');
+      return;
+    }
+
+    const {balance, ...newCashAccount} = cashAccount as {
+      balance: number;
+    } & Cash;
+
+    newCashAccount.initialBalance = amount;
+
+    setAccounts((prev) => [newCashAccount, ...prev.filter(acc => acc.id !== newCashAccount.id)]);
+
+    toast.success(`Valor total em dinheiro redefinido para ${formatCentsAsCurrency(amount)}`);
   }
 
   function handleResetApp() {
@@ -406,6 +450,7 @@ export default function App() {
           onResetApp={handleResetApp}
           onSelectUser={setCurrentUserId}
           onCreateUser={handleCreateUser}
+          onChangeCashValue={handleChangeCashValue}
         />
       </>
     );
@@ -416,16 +461,15 @@ export default function App() {
       {toastContainer}
       <Home
         user={currentUser}
+        cashAccount={cashAccount}
         checkingAccount={currentCheckingAccount}
         investmentAccount={currentInvestmentAccount}
         allUsers={users}
         allAccounts={nonCashAccounts}
         transactions={transactions}
+        setTransactions={setTransactions}
         isInvestmentEnabled={isInvestmentEnabled}
         onLogout={() => setCurrentUserId(null)}
-        onDeposit={handleDeposit}
-        onWithdraw={handleWithdraw}
-        onPix={handlePix}
         onInvest={handleInvest}
         onRescue={handleRescue}
       />

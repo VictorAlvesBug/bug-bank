@@ -16,7 +16,7 @@ export default function useAccountsState(): [
     
     const [accounts, setAccounts] = useLocalStorage<Account[]>('accounts', [cashAccount]);
 
-    const resetAccounts = () => setAccounts([cashAccount]);
+    const resetAccounts = () => setAccounts(prev => [...prev.filter(acc => acc.id === cashAccount.id)]);
 
     return [accounts, setAccounts, resetAccounts];
 }

@@ -1,6 +1,6 @@
 import { faSignOut } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import CheckingAccountCard from '../components/CheckingAccountCard';
 import Button from '../components/Common/Button';
 import InvestmentAccountCard from '../components/InvestmentAccountCard';
@@ -10,29 +10,28 @@ import { AccountWithBalance } from '../types/account.types';
 import { MoneyActionMode, Transaction } from '../types/transaction.types';
 import { User } from '../types/user.types';
 import { toast } from 'react-toastify';
+import DepositModal from '../components/DepositModal';
+import WithdrawModal from '../components/WithdrawModal';
+import SendPixModal from '../components/SendPixModal';
 
 type HomeProps = {
   user: User;
+  cashAccount: AccountWithBalance;
   checkingAccount: AccountWithBalance;
   investmentAccount: AccountWithBalance;
   allUsers: User[];
   allAccounts: AccountWithBalance[];
   transactions: Transaction[];
+  setTransactions: Dispatch<SetStateAction<Transaction[]>>;
   isInvestmentEnabled: boolean;
   onLogout: () => void;
-  onDeposit: (amount: number) => void;
-  onWithdraw: (amount: number) => void;
-  onPix: (
-    receiverUserId: string,
-    amount: number,
-    comment: string | undefined
-  ) => void;
   onInvest: (amount: number) => void;
   onRescue: (amount: number) => void;
 };
 
 export default function Home({
   user,
+  cashAccount,
   checkingAccount,
   investmentAccount,
   allUsers,
@@ -40,18 +39,17 @@ export default function Home({
   transactions,
   isInvestmentEnabled,
   onLogout,
-  onDeposit,
-  onWithdraw,
-  onPix,
   onInvest,
   onRescue
 }: HomeProps) {
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
+  const [sendPixModalOpen, setSendPixModalOpen] = useState(false);
+  
+
   const [moneyModalOpen, setMoneyModalOpen] = useState(false);
   const [moneyModalMode, setMoneyModalMode] =
     useState<MoneyActionMode>('Deposit');
-  const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(
-    null
-  );
 
   const userAccountIds = useMemo(
     (): string[] => [checkingAccount.id, investmentAccount.id],
@@ -70,24 +68,6 @@ export default function Home({
 
   const otherUsers = allUsers.filter((u) => u.id !== user.id);
 
-  function openDeposit() {
-    setMoneyModalMode('Deposit');
-    setMoneyModalOpen(true);
-  }
-
-  function openWithdraw() {
-    setMoneyModalMode('Withdraw');
-    setMoneyModalOpen(true);
-  }
-
-  function openPix() {
-    setMoneyModalMode('Pix');
-    if (!pixReceiverUserId && otherUsers[0]) {
-      setPixReceiverUserId(otherUsers[0].id);
-    }
-    setMoneyModalOpen(true);
-  }
-
   function openInvest() {
     setMoneyModalMode('Investment');
     setMoneyModalOpen(true);
@@ -100,22 +80,6 @@ export default function Home({
 
   function handleMoneyAction(amount: number, comment: string | undefined) {
     switch (moneyModalMode) {
-      case 'Deposit':
-        onDeposit(amount);
-        break;
-
-      case 'Withdraw':
-        onWithdraw(amount);
-        break;
-
-      case 'Pix':
-        if (!pixReceiverUserId) {
-          toast.error('Selecione um destinatário.');
-          return;
-        }
-        onPix(pixReceiverUserId, amount, comment);
-        break;
-
       case 'Investment':
         onInvest(amount);
         break;
@@ -158,23 +122,23 @@ export default function Home({
         <section className="space-y-3">
           <div className="flex gap-2">
             <Button
-              onClick={openDeposit}
+              onClick={() => setDepositModalOpen(true)}
               className="bg-emerald-500 hover:bg-emerald-400"
             >
               Depositar
             </Button>
             <Button
-              onClick={openWithdraw}
+              onClick={() => setWithdrawModalOpen(true)}
               className="bg-rose-500 hover:bg-rose-400"
             >
               Sacar
             </Button>
             <Button
-              onClick={openPix}
+              onClick={() => setSendPixModalOpen(true)}
               className="bg-indigo-600 shadow rounded-xl hover:bg-indigo-500"
               disabled={otherUsers.length === 0}
             >
-              Pix
+              Enviar PIX
             </Button>
           </div>
           {otherUsers.length === 0 && (
@@ -218,10 +182,27 @@ export default function Home({
         checkingAccountBalance={checkingAccount.balance}
         investmentAccountBalance={investmentAccount.balance}
         users={otherUsers}
-        selectedPixReceiverUserId={pixReceiverUserId}
-        onChangePixReceiverUser={setPixReceiverUserId}
         onConfirm={handleMoneyAction}
         onClose={() => setMoneyModalOpen(false)}
+      />
+      <DepositModal
+        isOpen={depositModalOpen}
+        cashAccount={cashAccount}
+        checkingAccount={checkingAccount}
+        onClose={() => setDepositModalOpen(false)}
+      />
+      <WithdrawModal
+        isOpen={withdrawModalOpen}
+        cashAccount={cashAccount}
+        checkingAccount={checkingAccount}
+        onClose={() => setWithdrawModalOpen(false)}
+      />
+      <SendPixModal
+        isOpen={sendPixModalOpen}
+        senderAccount={checkingAccount}
+        otherUsers={allUsers.filter(u => u.id !== user.id)}
+        allAccounts={allAccounts}
+        onClose={() => setSendPixModalOpen(false)}
       />
     </div>
   );

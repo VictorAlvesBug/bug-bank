@@ -10,8 +10,6 @@ type MoneyModalProps = {
   checkingAccountBalance: number;
   investmentAccountBalance: number;
   users: User[];
-  selectedPixReceiverUserId: string | null;
-  onChangePixReceiverUser: (id: string | null) => void;
   onConfirm: (amount: number, comment: string | undefined) => void;
   onClose: () => void;
 };
@@ -22,8 +20,6 @@ export default function MoneyModal({
   checkingAccountBalance,
   investmentAccountBalance,
   users,
-  selectedPixReceiverUserId,
-  onChangePixReceiverUser,
   onConfirm,
   onClose,
 }: MoneyModalProps) {
@@ -41,21 +37,6 @@ export default function MoneyModal({
   let description = '-';
 
   switch (mode) {
-    case 'Deposit':
-      title = 'Depósito';
-      description = 'Quanto deseja depositar na conta?';
-      break;
-
-    case 'Withdraw':
-      title = 'Saque';
-      description = 'Quanto deseja sacar da conta?';
-      break;
-
-    case 'Pix':
-      title = 'Pix';
-      description = 'Informe o valor do Pix e selecione o destinatário.';
-      break;
-
     case 'Investment':
       title = 'Investir';
       description = 'Quanto deseja investir?';
@@ -65,6 +46,11 @@ export default function MoneyModal({
       title = 'Resgatar';
       description = 'Quanto deseja resgatar?';
       break;
+
+    case 'ChangeCashValue':
+      title = 'Alterar valor do dinheiro em espécie';
+      description = 'Quanto dinheiro em cédulas você possui?';
+      break;
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -73,16 +59,15 @@ export default function MoneyModal({
       setError('Informe um valor maior que zero.');
       return;
     }
-    if ((mode === 'Withdraw' || mode === 'Pix' || mode === 'Investment') && value > checkingAccountBalance) {
+    if (
+      (mode === 'Investment') &&
+      value > checkingAccountBalance
+    ) {
       setError('Valor maior que o saldo em conta.');
       return;
     }
     if (mode === 'Rescue' && value > investmentAccountBalance) {
       setError('Valor maior que o saldo investido.');
-      return;
-    }
-    if (mode === 'Pix' && !selectedPixReceiverUserId) {
-      setError('Selecione um destinatário.');
       return;
     }
 
@@ -92,22 +77,34 @@ export default function MoneyModal({
     onClose();
   }
 
+  const checkingAccountBalanceAllowedModes: MoneyActionMode[] = [
+    'Investment',
+  ];
+
+  const investmentAccountBalanceAllowedModes: MoneyActionMode[] = [
+    'Rescue',
+  ];
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <p className="mb-2 text-xs text-slate-500">{description}</p>
-      <p className={`text-xs text-slate-500 ${(mode === 'Investment' || mode === 'Rescue') ? '' : 'mb-3'}`}>
-        Saldo em conta:{' '}
-        <span className="font-semibold">
-          {formatCentsAsCurrency(checkingAccountBalance)}
-        </span>
+      <p className={`mb-3 text-xs text-slate-500`}>
+        {checkingAccountBalanceAllowedModes.includes(mode) ? (
+          <>
+            Saldo em conta:{' '}
+            <span className="font-semibold">
+              {formatCentsAsCurrency(checkingAccountBalance)}
+            </span>
+          </>
+        ) : null}
       </p>
-      {mode === 'Investment' || mode === 'Rescue' ? (
-        <p className="mb-3 mt-[-3] text-xs text-slate-500">
+      {investmentAccountBalanceAllowedModes.includes(mode) ? (
+        <>
           Saldo investido:{' '}
           <span className="font-semibold">
             {formatCentsAsCurrency(investmentAccountBalance)}
           </span>
-        </p>
+        </>
       ) : null}
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
@@ -127,30 +124,6 @@ export default function MoneyModal({
             autoFocus
           />
         </div>
-
-        {mode === 'Pix' && (
-          <div>
-            <label className="block mb-1 text-xs font-medium text-slate-700">
-              Destinatário
-            </label>
-            <select
-              className="w-full px-3 py-2 text-sm border rounded-lg border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={selectedPixReceiverUserId ?? ''}
-              onChange={(e) =>
-                onChangePixReceiverUser(
-                  e.target.value ? String(e.target.value) : null
-                )
-              }
-            >
-              <option value="">Selecione um usuário</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
 
         {error && <p className="text-xs text-red-500">{error}</p>}
 

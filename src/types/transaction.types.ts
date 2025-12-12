@@ -57,4 +57,4 @@ export type Transaction = DepositOrWithdraw | Pix | Investment | Rescue | Yield;
 
 export type TransactionType = Transaction["type"];
 
-export type MoneyActionMode = (DepositOrWithdraw | Pix | Investment | Rescue)["type"]
+export type MoneyActionMode = (DepositOrWithdraw | Pix | Investment | Rescue)["type"] | 'ChangeCashValue'
