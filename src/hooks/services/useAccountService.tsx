@@ -1,6 +1,6 @@
 import { Account, AccountWithBalance } from '../../types/account.types';
-import useAccountRepository from '../repositories/useAccountRepository';
-import useTransactionRepository from '../repositories/useTransactionRepository';
+import useAccountRepository from '../repositories/accountRepository';
+import useTransactionRepository from '../repositories/transactionRepository';
 
 export default function useAccountService() {
   const accountRepository = useAccountRepository();

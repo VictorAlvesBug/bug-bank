@@ -20,6 +20,7 @@ export default function SendPixModal({
   allAccounts,
   onClose,
 }: SendPixModalProps) {
+  const [wasOpened, setWasOpened] = useState(false);
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
   const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(
@@ -33,20 +34,17 @@ export default function SendPixModal({
   }, [userService, senderAccount.userId]);
 
   useEffect(() => {
-    setAmount(0);
-    setError('');
+    if (wasOpened && !isOpen) {
+      setAmount(0);
+      setError('');
 
-    if (!pixReceiverUserId && otherUsers[0]) {
-      setPixReceiverUserId(otherUsers[0].id);
+      if (otherUsers[0]) {
+        setPixReceiverUserId(otherUsers[0].id);
+      }
     }
-  }, [
-    isOpen,
-    setAmount,
-    setError,
-    pixReceiverUserId,
-    setPixReceiverUserId,
-    otherUsers,
-  ]);
+
+    setWasOpened(isOpen);
+  }, [isOpen, setAmount, setError, pixReceiverUserId, setPixReceiverUserId, otherUsers, wasOpened]);
 
   if (!isOpen) return null;
 

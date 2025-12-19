@@ -13,6 +13,7 @@ import {
   Transaction,
   Yield
 } from './types/transaction.types';
+import localStorageUtils from './utils/useLocalStorageUtils';
 
 export default function App() {
   const userService = useUserService();
@@ -20,8 +21,7 @@ export default function App() {
   const transactionService = useTransactionService();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isInvestmentEnabled, setIsInvestmentEnabled] =
-    useIsInvestmentEnabledState();
+  const { get: getIsInvestmentEnabled, set: setIsInvestmentEnabled } = localStorageUtils<boolean>('isInvestmentEnabled', false);
 
   var onChangeInvestmentEnabled = useCallback(
     (enabled: boolean) => {
@@ -87,10 +87,8 @@ export default function App() {
     const interval = setInterval(() => {
       const investmentAccounts = nonCashAccounts.filter(
         (account) =>
-          account.type === 'ImmediateRescueInvestmentAccount' &&
-          account.balance > 0
+          account.type === 'ImmediateRescueInvestmentAccount' && account.balance > 0
       );
-      console.log(123, nonCashAccounts);
 
       investmentAccounts.forEach((investmentAccount) => {
         const yieldRateInAHour = 0.5;
@@ -111,7 +109,7 @@ export default function App() {
           .map((tran) => new Date(tran.createdAt));
 
         const lastNotYieldTransactionDate = nonYieldTransactionDates.reduce(
-          (max, curr) => (curr > max ? curr : max)
+          (max, curr) => (curr > max ? curr : max), new Date(1970, 0, 1)
         );
 
         let tranList = transactionService.listAll().filter(
@@ -176,8 +174,8 @@ export default function App() {
         <Login
           cashAccount={cashAccount}
           accounts={nonCashAccounts}
-          isInvestmentEnabled={isInvestmentEnabled}
-          onChangeInvestmentEnabled={onChangeInvestmentEnabled}
+          isInvestmentEnabled={getIsInvestmentEnabled()}
+          onChangeInvestmentEnabled={setIsInvestmentEnabled}
           onSelectUser={setCurrentUserId}
         />
       </>
@@ -193,7 +191,7 @@ export default function App() {
         checkingAccount={currentCheckingAccount}
         investmentAccount={currentInvestmentAccount}
         allAccounts={nonCashAccounts}
-        isInvestmentEnabled={isInvestmentEnabled}
+        isInvestmentEnabled={getIsInvestmentEnabled()}
         onLogout={() => setCurrentUserId(null)}
       />
     </>

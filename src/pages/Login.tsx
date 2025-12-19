@@ -14,6 +14,8 @@ import useTransactionService from '../hooks/services/useTransactionService';
 import useUserService from '../hooks/services/useUserService';
 import { AccountWithBalance } from '../types/account.types';
 import { formatCentsAsCurrency } from '../utils/currencyUtils';
+import Nfc from 'nfc-react-web';
+import NFCReader from '../components/NFCReader';
 
 type LoginProps = {
   cashAccount: AccountWithBalance;
@@ -84,6 +86,7 @@ export default function Login({
         {userService.listAll().length === 0 ? (
           <p className="text-sm text-slate-500">
             Crie seu primeiro usuário clicando no botão '+'.
+              {/* <NFCReader /> */}
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

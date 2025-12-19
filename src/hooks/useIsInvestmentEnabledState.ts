@@ -1,5 +1,6 @@
-import useLocalStorage from './useLocalStorage';
+import localStorageUtils from '../utils/useLocalStorageUtils';
+import useLocalStorage from '../utils/useLocalStorageUtils';
 
 export default function useIsInvestmentEnabledState(){
-    return useLocalStorage<boolean>('isInvestmentEnabled', false);
+    return 
 }
