@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionService from '../hooks/services/useTransactionService';
-import useUserService from '../hooks/services/useUserService';
+import createTransactionService from '../services/transactionService';
+import createUserService from '../services/userService';
 import { AccountWithBalance } from '../types/account.types';
 import { Pix } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
@@ -26,8 +26,8 @@ export default function SendPixModal({
   const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(
     null
   );
-  const transactionService = useTransactionService();
-  const userService = useUserService();
+  const transactionService = createTransactionService();
+  const userService = createUserService();
 
   const otherUsers = useMemo(() => {
     return userService.listAll().filter((u) => u.id !== senderAccount.userId);

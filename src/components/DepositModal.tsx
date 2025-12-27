@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionService from '../hooks/services/useTransactionService';
+import createTransactionService from '../services/transactionService';
 import { AccountWithBalance } from '../types/account.types';
 import { DepositOrWithdraw } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
@@ -21,7 +21,7 @@ export default function DepositModal({
 }: DepositModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const transactionService = useTransactionService();
+  const transactionService = createTransactionService();
 
   useEffect(() => {
     setAmount(0);

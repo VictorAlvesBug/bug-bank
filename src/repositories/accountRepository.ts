@@ -1,7 +1,7 @@
-import { Account } from '../../types/account.types';
-import localStorageUtils from '../../utils/useLocalStorageUtils';
+import { Account } from '../types/account.types';
+import localStorageUtils from '../utils/useLocalStorageUtils';
 
-const accountRepository = (() => {
+const createAccountRepository = (() => {
     const initialCashAccount: Account = {
         id: 'cash-Cash',
         userId: 'cash',
@@ -39,4 +39,4 @@ const accountRepository = (() => {
     }
 })();
 
-export default accountRepository;
+export default createAccountRepository;

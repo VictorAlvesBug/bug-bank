@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import useAccountService from '../hooks/services/useAccountService';
-import useUserService from '../hooks/services/useUserService';
+import createAccountService from '../services/accountService';
+import createUserService from '../services/userService';
 import {
   Account,
   InvestmentOrCheckingAccountType,
@@ -20,8 +20,8 @@ export default function CreateUserModal({
 }: CreateUserModalProps) {
   const [newUserName, setNewUserName] = useState('');
   const [error, setError] = useState('');
-  const userService = useUserService();
-  const accountService = useAccountService();
+  const userService = createUserService();
+  const accountService = createAccountService();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

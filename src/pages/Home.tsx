@@ -10,8 +10,8 @@ import RescueModal from '../components/RescueModal';
 import SendPixModal from '../components/SendPixModal';
 import TransactionCard from '../components/TransactionCard';
 import WithdrawModal from '../components/WithdrawModal';
-import useTransactionService from '../hooks/services/useTransactionService';
-import useUserService from '../hooks/services/useUserService';
+import createTransactionService from '../services/transactionService';
+import createUserService from '../services/userService';
 import { AccountWithBalance } from '../types/account.types';
 import { User } from '../types/user.types';
 
@@ -40,8 +40,8 @@ export default function Home({
   const [investmentModalOpen, setInvestmentModalOpen] = useState(false);
   const [rescueModalOpen, setRescueModalOpen] = useState(false);
 
-  const transactionService = useTransactionService();
-  const userService = useUserService();
+  const transactionService = createTransactionService();
+  const userService = createUserService();
 
   const userAccountIds = useMemo(
     (): string[] => [checkingAccount.id, investmentAccount.id],

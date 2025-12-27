@@ -1,17 +1,16 @@
-import { Account, AccountWithBalance } from '../../types/account.types';
-import useAccountRepository from '../repositories/accountRepository';
-import useTransactionRepository from '../repositories/transactionRepository';
+import { Account, AccountWithBalance } from '../types/account.types';
+import createAccountRepository from '../repositories/accountRepository';
+import createTransactionRepository from '../repositories/transactionRepository';
 
-export default function useAccountService() {
-  const accountRepository = useAccountRepository();
-  const transactionRepository = useTransactionRepository();
-
+export default function createAccountService() {
+  const accountInstance = createAccountRepository();
+  const transactionInstance = createTransactionRepository();
   function decorateWithBalance(
     account: Account | null
   ): AccountWithBalance | null {
     if (!account) return null;
 
-    const transactions = transactionRepository.listByAccountIds([account.id]);
+    const transactions = transactionInstance.listByAccountIds([account.id]);
     const initialBalance = account.initialBalance || 0;
     const balance = transactions.reduce((balance, tran) => {
       if (tran.receiverAccountId === account.id) return balance + tran.amount;
@@ -21,30 +20,30 @@ export default function useAccountService() {
   }
 
   return {
-    ...accountRepository,
+    ...accountInstance,
     listAll: (): AccountWithBalance[] =>
-      accountRepository
+      accountInstance
         .listAll()
         .map(decorateWithBalance)
         .filter(Boolean) as AccountWithBalance[],
     listByUserId: (userId: string): AccountWithBalance[] =>
-      accountRepository
+      accountInstance
         .listByUserId(userId)
         .map(decorateWithBalance)
         .filter(Boolean) as AccountWithBalance[],
     listNonCashAccounts: (): AccountWithBalance[] =>
-      accountRepository
+      accountInstance
         .listNonCashAccounts()
         .map(decorateWithBalance)
         .filter(Boolean) as AccountWithBalance[],
     getCashAccount: (): AccountWithBalance | null =>
-      decorateWithBalance(accountRepository.getCashAccount()),
+      decorateWithBalance(accountInstance.getCashAccount()),
     getById: (id: string | null): AccountWithBalance | null =>
-      decorateWithBalance(accountRepository.getById(id)),
+      decorateWithBalance(accountInstance.getById(id)),
     getByUserIdAndType: (
       userId: string,
       type: Account['type']
     ): AccountWithBalance | null =>
-      decorateWithBalance(accountRepository.getByUserIdAndType(userId, type)),
+      decorateWithBalance(accountInstance.getByUserIdAndType(userId, type)),
   };
 }

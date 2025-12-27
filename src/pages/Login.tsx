@@ -9,9 +9,9 @@ import { toast } from 'react-toastify';
 import CashAmountModal from '../components/CashAmountModal';
 import CreateUserModal from '../components/CreateUserModal';
 import UserCard from '../components/UserCard';
-import useAccountService from '../hooks/services/useAccountService';
-import useTransactionService from '../hooks/services/useTransactionService';
-import useUserService from '../hooks/services/useUserService';
+import createAccountService from '../services/accountService';
+import createTransactionService from '../services/transactionService';
+import createUserService from '../services/userService';
 import { AccountWithBalance } from '../types/account.types';
 import { formatCentsAsCurrency } from '../utils/currencyUtils';
 import Nfc from 'nfc-react-web';
@@ -21,21 +21,21 @@ type LoginProps = {
   cashAccount: AccountWithBalance;
   accounts: AccountWithBalance[];
   isInvestmentEnabled: boolean;
-  onChangeInvestmentEnabled: (enabled: boolean) => void;
+  onToggleInvestmentEnabled: () => void;
   onSelectUser: (id: string) => void;
 };
 
 export default function Login({
   cashAccount,
   isInvestmentEnabled,
-  onChangeInvestmentEnabled,
+  onToggleInvestmentEnabled,
   onSelectUser,
 }: LoginProps) {
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [cashAmountModalOpen, setCashAmountModalOpen] = useState(false);
-  const userService = useUserService();
-    const accountService = useAccountService();
-    const transactionService = useTransactionService();
+  const userService = createUserService();
+  const accountService = createAccountService();
+  const transactionService = createTransactionService();
 
   function handleResetApp() {
     userService.reset();
@@ -60,7 +60,7 @@ export default function Login({
                 ? 'bg-blue-500 text-white border-blue-200 hover:bg-blue-400'
                 : 'text-blue-500 border-blue-200 hover:bg-blue-50')
             }
-            onClick={() => onChangeInvestmentEnabled(!isInvestmentEnabled)}
+            onClick={() => onToggleInvestmentEnabled()}
           >
             <FontAwesomeIcon icon={faArrowTrendUp} />
           </button>
@@ -72,11 +72,12 @@ export default function Login({
           </button>
         </div>
         <div
-          className="flex flex-row items-center justify-center px-4 pb-3"
+          className="flex flex-row items-center justify-between px-4 pb-3"
           onClick={() => setCashAmountModalOpen(true)}
         >
+          <p className="text-xs text-slate-500">Em circulação:</p>{' '}
           <p className="text-xs text-slate-500">
-            Em circulação: {formatCentsAsCurrency(cashAccount.balance)}/
+            {formatCentsAsCurrency(cashAccount.balance)}/
             {formatCentsAsCurrency(cashAccount.initialBalance)}
           </p>
         </div>
@@ -86,13 +87,18 @@ export default function Login({
         {userService.listAll().length === 0 ? (
           <p className="text-sm text-slate-500">
             Crie seu primeiro usuário clicando no botão '+'.
-              {/* <NFCReader /> */}
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {userService.listAll().map((user) => {
-              const checkingAccount = accountService.getByUserIdAndType(user.id, 'CheckingAccount');
-              const investmentAccount = accountService.getByUserIdAndType(user.id, 'ImmediateRescueInvestmentAccount');
+              const checkingAccount = accountService.getByUserIdAndType(
+                user.id,
+                'CheckingAccount'
+              );
+              const investmentAccount = accountService.getByUserIdAndType(
+                user.id,
+                'ImmediateRescueInvestmentAccount'
+              );
 
               if (!checkingAccount || !investmentAccount) {
                 toast.error(
@@ -128,11 +134,11 @@ export default function Login({
         isOpen={createUserModalOpen}
         onClose={() => setCreateUserModalOpen(false)}
       />
-            <CashAmountModal
-              isOpen={cashAmountModalOpen}
-              cashAccount={cashAccount}
-              onClose={() => setCashAmountModalOpen(false)}
-            />
+      <CashAmountModal
+        isOpen={cashAmountModalOpen}
+        cashAccount={cashAccount}
+        onClose={() => setCashAmountModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
-import { Transaction } from '../../types/transaction.types';
-import localStorageUtils from '../../utils/useLocalStorageUtils';
+import { Transaction } from '../types/transaction.types';
+import localStorageUtils from '../utils/useLocalStorageUtils';
 
-const transactionRepository = (() => {
+const createTransactionRepository = (() => {
     const { get, set } = localStorageUtils<Transaction[]>('transactions', []);
 
     const listAll = () => get();
@@ -28,4 +28,4 @@ const transactionRepository = (() => {
     };
 })();
 
-export default transactionRepository;
+export default createTransactionRepository;

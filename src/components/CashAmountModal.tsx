@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useAccountService from '../hooks/services/useAccountService';
+import createAccountService from '../services/accountService';
 import { AccountWithBalance, Cash } from '../types/account.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
@@ -18,7 +18,7 @@ export default function CashAmountModal({
 }: CashAmountModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const accountService = useAccountService();
+  const accountService = createAccountService();
 
   useEffect(() => {
     setAmount(0);

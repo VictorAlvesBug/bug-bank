@@ -1,7 +1,7 @@
-import { User } from '../../types/user.types';
-import localStorageUtils from '../../utils/useLocalStorageUtils';
+import { User } from '../types/user.types';
+import localStorageUtils from '../utils/useLocalStorageUtils';
 
-const userRepository = (() => {
+const createUserRepository = (() => {
     const { get, set } = localStorageUtils<User[]>('users', []);
 
     const listAll = () => get();
@@ -21,4 +21,4 @@ const userRepository = (() => {
     }
 })();
 
-export default userRepository;
+export default createUserRepository;

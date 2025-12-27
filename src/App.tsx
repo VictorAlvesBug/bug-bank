@@ -1,41 +1,37 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
-import useAccountService from './hooks/services/useAccountService';
+import createAccountService from './services/accountService';
 import useIsInvestmentEnabledState from './hooks/useIsInvestmentEnabledState';
-import useTransactionService from './hooks/services/useTransactionService';
-import useUserService from './hooks/services/useUserService';
+import createTransactionService from './services/transactionService';
+import createUserService from './services/userService';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import {
-  AccountWithBalance
-} from './types/account.types';
-import {
-  Transaction,
-  Yield
-} from './types/transaction.types';
+import { AccountWithBalance } from './types/account.types';
+import { Transaction, Yield } from './types/transaction.types';
 import localStorageUtils from './utils/useLocalStorageUtils';
 
 export default function App() {
-  const userService = useUserService();
-  const accountService = useAccountService();
-  const transactionService = useTransactionService();
+  const userService = createUserService();
+  const accountService = createAccountService();
+  const transactionService = createTransactionService();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const { get: getIsInvestmentEnabled, set: setIsInvestmentEnabled } = localStorageUtils<boolean>('isInvestmentEnabled', false);
+  const { get: getIsInvestmentEnabled, set: setIsInvestmentEnabled } =
+    localStorageUtils<boolean>('isInvestmentEnabled', false);
+  const [isInvestmentEnabledState, setIsInvestmentEnabledState] =
+    useState<boolean>(getIsInvestmentEnabled());
 
-  var onChangeInvestmentEnabled = useCallback(
-    (enabled: boolean) => {
-      setIsInvestmentEnabled(enabled);
+  var onToggleInvestmentEnabled = useCallback(() => {
+    setIsInvestmentEnabled(!isInvestmentEnabledState);
+    setIsInvestmentEnabledState(!isInvestmentEnabledState);
 
-      if (enabled) {
-        toast.success(`Recurso de investimento habilitado`);
-        return;
-      }
+    if (isInvestmentEnabledState === false) {
+      toast.success(`Recurso de investimento habilitado`);
+      return;
+    }
 
-      toast.success(`Recurso de investimento desabilitado`);
-    },
-    [setIsInvestmentEnabled]
-  );
+    toast.success(`Recurso de investimento desabilitado`);
+  }, [setIsInvestmentEnabled, isInvestmentEnabledState]);
 
   const currentUser = useMemo(
     () => userService.getById(currentUserId),
@@ -44,7 +40,9 @@ export default function App() {
 
   const accountsWithBalance = useMemo((): AccountWithBalance[] => {
     return accountService.listAll().map((account) => {
-      const transactionsRelated = transactionService.listByAccountIds([account.id]);
+      const transactionsRelated = transactionService.listByAccountIds([
+        account.id,
+      ]);
 
       const balance = transactionsRelated.reduce((balance, tran) => {
         if (tran.receiverAccountId === account.id) return balance + tran.amount;
@@ -87,7 +85,8 @@ export default function App() {
     const interval = setInterval(() => {
       const investmentAccounts = nonCashAccounts.filter(
         (account) =>
-          account.type === 'ImmediateRescueInvestmentAccount' && account.balance > 0
+          account.type === 'ImmediateRescueInvestmentAccount' &&
+          account.balance > 0
       );
 
       investmentAccounts.forEach((investmentAccount) => {
@@ -100,7 +99,8 @@ export default function App() {
           createdAt: new Date().toISOString(),
         };
 
-        const nonYieldTransactionDates = transactionService.listAll()
+        const nonYieldTransactionDates = transactionService
+          .listAll()
           .filter(
             (tran) =>
               tran.receiverAccountId === investmentAccount.id &&
@@ -109,12 +109,13 @@ export default function App() {
           .map((tran) => new Date(tran.createdAt));
 
         const lastNotYieldTransactionDate = nonYieldTransactionDates.reduce(
-          (max, curr) => (curr > max ? curr : max), new Date(1970, 0, 1)
+          (max, curr) => (curr > max ? curr : max),
+          new Date(1970, 0, 1)
         );
 
-        let tranList = transactionService.listAll().filter(
-          (tran) => tran.receiverAccountId === investmentAccount.id
-        );
+        let tranList = transactionService
+          .listAll()
+          .filter((tran) => tran.receiverAccountId === investmentAccount.id);
         tranList.sort(
           (tranA: Transaction, tranB: Transaction) =>
             new Date(tranA.createdAt).getTime() -
@@ -175,7 +176,7 @@ export default function App() {
           cashAccount={cashAccount}
           accounts={nonCashAccounts}
           isInvestmentEnabled={getIsInvestmentEnabled()}
-          onChangeInvestmentEnabled={setIsInvestmentEnabled}
+          onToggleInvestmentEnabled={onToggleInvestmentEnabled}
           onSelectUser={setCurrentUserId}
         />
       </>
