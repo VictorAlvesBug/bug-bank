@@ -1,5 +1,5 @@
 import { User } from '../types/user.types';
-import localStorageUtils from '../utils/useLocalStorageUtils';
+import localStorageUtils from '../utils/localStorageUtils';
 
 const createUserRepository = (() => {
     const { get, set } = localStorageUtils<User[]>('users', []);

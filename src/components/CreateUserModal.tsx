@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
-import createAccountService from '../services/accountService';
-import createUserService from '../services/userService';
+import useAccountsState from '../hooks/useAccountsState';
+import useUsersState from '../hooks/useUsersState';
 import {
   Account,
   InvestmentOrCheckingAccountType,
@@ -20,8 +20,8 @@ export default function CreateUserModal({
 }: CreateUserModalProps) {
   const [newUserName, setNewUserName] = useState('');
   const [error, setError] = useState('');
-  const userService = createUserService();
-  const accountService = createAccountService();
+    const {userService, refreshUsers} = useUsersState();
+  const {accountService, refreshAccounts} = useAccountsState();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,11 +39,13 @@ export default function CreateUserModal({
     };
 
     userService.add(newUser);
+    refreshUsers();
 
     const accountTypes: InvestmentOrCheckingAccountType[] = [
       'CheckingAccount',
       'ImmediateRescueInvestmentAccount',
     ];
+
     accountTypes
       .map<Account>(
         (accountType): Account => ({
@@ -54,6 +56,8 @@ export default function CreateUserModal({
         })
       )
       .forEach(accountService.add);
+
+      refreshAccounts();
 
     toast.success(`Seja bem-vindo, ${name}!`);
 

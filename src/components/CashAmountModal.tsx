@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import createAccountService from '../services/accountService';
+import useAccountsState from '../hooks/useAccountsState';
 import { AccountWithBalance, Cash } from '../types/account.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
@@ -18,7 +18,7 @@ export default function CashAmountModal({
 }: CashAmountModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const accountService = createAccountService();
+  const { accountService, refreshAccounts } = useAccountsState();
 
   useEffect(() => {
     setAmount(0);
@@ -39,20 +39,26 @@ export default function CashAmountModal({
       setError('Conta de dinheiro físico não encontrada');
       return;
     }
-    if (amount <= 0 || amount < cashAccount.initialBalance - cashAccount.balance) {
+    if (
+      amount <= 0 ||
+      amount < cashAccount.initialBalance - cashAccount.balance
+    ) {
       setError('Informe uma quantia superior ao total em conta dos usuários');
       return;
     }
 
-    const {balance, ...newCashAccount} = cashAccount as {
+    const { balance, ...newCashAccount } = cashAccount as {
       balance: number;
     } & Cash;
 
     newCashAccount.initialBalance = amount;
 
     accountService.update(newCashAccount);
+    refreshAccounts();
 
-    toast.success(`Valor total em dinheiro redefinido para ${formatCentsAsCurrency(amount)}`);
+    toast.success(
+      `Valor total em dinheiro redefinido para ${formatCentsAsCurrency(amount)}`
+    );
 
     onClose();
   }

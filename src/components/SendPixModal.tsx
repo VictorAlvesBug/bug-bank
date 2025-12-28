@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import createTransactionService from '../services/transactionService';
-import createUserService from '../services/userService';
+import useTransactionsState from '../hooks/useTransactionsState';
+import useUsersState from '../hooks/useUsersState';
 import { AccountWithBalance } from '../types/account.types';
 import { Pix } from '../types/transaction.types';
+import { User } from '../types/user.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
 
@@ -26,12 +27,14 @@ export default function SendPixModal({
   const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(
     null
   );
-  const transactionService = createTransactionService();
-  const userService = createUserService();
+    const {transactionService, refreshTransactions} = useTransactionsState();
+  const {users, userService} = useUsersState();
 
-  const otherUsers = useMemo(() => {
-    return userService.listAll().filter((u) => u.id !== senderAccount.userId);
-  }, [userService, senderAccount.userId]);
+  const [otherUsers, setOtherUsers] = useState<User[]>(users.filter((u) => u.id !== senderAccount.userId));
+
+  useEffect(() => {
+    setOtherUsers(userService.listAll().filter((u) => u.id !== senderAccount.userId));
+  }, [senderAccount.userId, userService]);
 
   useEffect(() => {
     if (wasOpened && !isOpen) {
@@ -92,6 +95,7 @@ export default function SendPixModal({
     };
 
     transactionService.add(pix);
+    refreshTransactions();
 
     toast.success(
       `Pix de ${formatCentsAsCurrency(amount)} realizado com sucesso`

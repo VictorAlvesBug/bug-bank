@@ -9,13 +9,11 @@ import { toast } from 'react-toastify';
 import CashAmountModal from '../components/CashAmountModal';
 import CreateUserModal from '../components/CreateUserModal';
 import UserCard from '../components/UserCard';
-import createAccountService from '../services/accountService';
-import createTransactionService from '../services/transactionService';
-import createUserService from '../services/userService';
+import useAccountsState from '../hooks/useAccountsState';
+import useTransactionsState from '../hooks/useTransactionsState';
+import useUsersState from '../hooks/useUsersState';
 import { AccountWithBalance } from '../types/account.types';
 import { formatCentsAsCurrency } from '../utils/currencyUtils';
-import Nfc from 'nfc-react-web';
-import NFCReader from '../components/NFCReader';
 
 type LoginProps = {
   cashAccount: AccountWithBalance;
@@ -33,15 +31,19 @@ export default function Login({
 }: LoginProps) {
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [cashAmountModalOpen, setCashAmountModalOpen] = useState(false);
-  const userService = createUserService();
-  const accountService = createAccountService();
-  const transactionService = createTransactionService();
+
+  const { users, userService, refreshUsers } = useUsersState();
+  const { accounts, accountService, refreshAccounts } = useAccountsState();
+  const { transactionService, refreshTransactions } = useTransactionsState();
 
   function handleResetApp() {
     userService.reset();
     accountService.reset();
     transactionService.reset();
 
+    refreshUsers();
+    refreshAccounts();
+    refreshTransactions();
     toast.success(`Os dados do aplicativo foram limpos`);
   }
 
@@ -84,20 +86,22 @@ export default function Login({
       </header>
 
       <main className="flex-1 p-4 pb-20">
-        {userService.listAll().length === 0 ? (
+        {users.length === 0 ? (
           <p className="text-sm text-slate-500">
             Crie seu primeiro usuário clicando no botão '+'.
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {userService.listAll().map((user) => {
-              const checkingAccount = accountService.getByUserIdAndType(
-                user.id,
-                'CheckingAccount'
+            {users.map((user) => {
+              const checkingAccount = accounts.find(
+                (account) =>
+                  account.userId === user.id &&
+                  account.type === 'CheckingAccount'
               );
-              const investmentAccount = accountService.getByUserIdAndType(
-                user.id,
-                'ImmediateRescueInvestmentAccount'
+              const investmentAccount = accounts.find(
+                (account) =>
+                  account.userId === user.id &&
+                  account.type === 'ImmediateRescueInvestmentAccount'
               );
 
               if (!checkingAccount || !investmentAccount) {

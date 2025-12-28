@@ -1,5 +1,5 @@
 import { Transaction } from '../types/transaction.types';
-import localStorageUtils from '../utils/useLocalStorageUtils';
+import localStorageUtils from '../utils/localStorageUtils';
 
 const createTransactionRepository = (() => {
     const { get, set } = localStorageUtils<Transaction[]>('transactions', []);

@@ -1,6 +1,6 @@
 import { faSignOut } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import CheckingAccountCard from '../components/CheckingAccountCard';
 import Button from '../components/Common/Button';
 import DepositModal from '../components/DepositModal';
@@ -10,9 +10,10 @@ import RescueModal from '../components/RescueModal';
 import SendPixModal from '../components/SendPixModal';
 import TransactionCard from '../components/TransactionCard';
 import WithdrawModal from '../components/WithdrawModal';
-import createTransactionService from '../services/transactionService';
-import createUserService from '../services/userService';
+import useTransactionsState from '../hooks/useTransactionsState';
+import useUsersState from '../hooks/useUsersState';
 import { AccountWithBalance } from '../types/account.types';
+import { Transaction } from '../types/transaction.types';
 import { User } from '../types/user.types';
 
 type HomeProps = {
@@ -40,21 +41,20 @@ export default function Home({
   const [investmentModalOpen, setInvestmentModalOpen] = useState(false);
   const [rescueModalOpen, setRescueModalOpen] = useState(false);
 
-  const transactionService = createTransactionService();
-  const userService = createUserService();
+  const {transactionService} = useTransactionsState();
+  const { users } = useUsersState();
+  const [userAccountIds, setUserAccountIds] = useState<string[]>([]);
+  const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
 
-  const userAccountIds = useMemo(
-    (): string[] => [checkingAccount.id, investmentAccount.id],
-    [checkingAccount.id, investmentAccount.id]
-  );
+  useEffect(() => {
+    setUserAccountIds([checkingAccount.id, investmentAccount.id]);
+  }, [checkingAccount.id, investmentAccount.id]);
 
-  const userTransactions = useMemo(
-    () =>
-      transactionService.listByAccountIds(userAccountIds),
-    [transactionService, userAccountIds]
-  );
+  useEffect(() => {
+    setUserTransactions(transactionService.listByAccountIds(userAccountIds));
+  }, [transactionService, userAccountIds]);
 
-  const otherUsers = userService.listAll().filter((u) => u.id !== user.id);
+  const otherUsers = users.filter((u) => u.id !== user.id);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-100">
@@ -130,7 +130,7 @@ export default function Home({
                   <TransactionCard
                     key={transaction.id}
                     transaction={transaction}
-                    allUsers={userService.listAll()}
+                    allUsers={users}
                     allAccounts={allAccounts}
                     checkingAccount={checkingAccount}
                   />

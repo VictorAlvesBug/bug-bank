@@ -1,5 +1,5 @@
 import { Account } from '../types/account.types';
-import localStorageUtils from '../utils/useLocalStorageUtils';
+import localStorageUtils from '../utils/localStorageUtils';
 
 const createAccountRepository = (() => {
     const initialCashAccount: Account = {
