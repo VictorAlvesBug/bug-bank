@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionsState from '../hooks/useTransactionsState';
+import { useDataContext } from '../context/DataProvider';
 import { AccountWithBalance } from '../types/account.types';
 import { Rescue } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
-import { useDataContext } from '../context/DataProvider';
 
 type RescueModalProps = {
   isOpen: boolean;

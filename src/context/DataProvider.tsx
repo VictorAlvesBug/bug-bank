@@ -26,13 +26,13 @@ type DataProviderProps = {
 };
 
 export default function DataProvider({ children }: DataProviderProps) {
-    const { users: usersFromState, userService } = useUsersState();
-    const { accounts: accountsFromState, accountService } = useAccountsState();
-    const { transactions: transactionsFromState, transactionService } = useTransactionsState();
+    const { userService } = useUsersState();
+    const { accountService } = useAccountsState();
+    const { transactionService } = useTransactionsState();
 
-    const [users, setUsers] = useState<User[]>(usersFromState);
-    const [accounts, setAccounts] = useState<AccountWithBalance[]>(accountsFromState);
-    const [transactions, setTransactions] = useState<Transaction[]>(transactionsFromState);
+    const [users, setUsers] = useState<User[]>(userService.listAll());
+    const [accounts, setAccounts] = useState<AccountWithBalance[]>(accountService.listAll());
+    const [transactions, setTransactions] = useState<Transaction[]>(transactionService.listAll());
 
 
     const refreshData = useCallback(() => {

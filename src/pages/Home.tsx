@@ -40,7 +40,7 @@ export default function Home({
   const [investmentModalOpen, setInvestmentModalOpen] = useState(false);
   const [rescueModalOpen, setRescueModalOpen] = useState(false);
 
-  const {transactionService, users } = useDataContext();
+  const {transactionService, users, transactions } = useDataContext();
   const [userAccountIds, setUserAccountIds] = useState<string[]>([]);
   const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
 
@@ -50,7 +50,7 @@ export default function Home({
 
   useEffect(() => {
     setUserTransactions(transactionService.listByAccountIds(userAccountIds));
-  }, [transactionService, userAccountIds]);
+  }, [transactionService, userAccountIds, transactions]);
 
   const otherUsers = users.filter((u) => u.id !== user.id);
 
