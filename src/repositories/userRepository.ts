@@ -7,7 +7,7 @@ const createUserRepository = (() => {
     const listAll = () => get();
     const getById = (id: string | null) => get().find((user) => user.id === id) || null;
     const add = (user: User) => set([...get(), user]);
-    const update = (updatedUser: User) => set(get().map((user) => (user.id === updatedUser.id ? updatedUser : user)));
+    const update = (updatedUser: User) => set(get().map((user) => user.id === updatedUser.id ? updatedUser : user));
     const reset = () => set([]);
 
     return () => {

@@ -9,7 +9,13 @@ import { Transaction, Yield } from './types/transaction.types';
 import { User } from './types/user.types';
 
 export default function App() {
-  const {userService, accounts, transactions, transactionService, refreshData} = useDataContext();
+  const {
+    userService,
+    accounts,
+    transactions,
+    transactionService,
+    refreshData,
+  } = useDataContext();
 
   const [currentUserIdState, setCurrentUserId] = useState<string | null>(null);
   const [isInvestmentEnabledState, toggleInvestmentEnabled] =
@@ -90,7 +96,8 @@ export default function App() {
           createdAt: new Date().toISOString(),
         };
 
-        const nonYieldTransactionDates = transactions.filter(
+        const nonYieldTransactionDates = transactions
+          .filter(
             (tran) =>
               tran.receiverAccountId === investmentAccount.id &&
               tran.type !== 'Yield'
@@ -102,7 +109,9 @@ export default function App() {
           new Date(1970, 0, 1)
         );
 
-        let tranList = transactions.filter((tran) => tran.receiverAccountId === investmentAccount.id);
+        let tranList = transactions.filter(
+          (tran) => tran.receiverAccountId === investmentAccount.id
+        );
         tranList.sort(
           (tranA: Transaction, tranB: Transaction) =>
             new Date(tranA.createdAt).getTime() -
@@ -130,8 +139,10 @@ export default function App() {
         );
 
         transactionService.update(lastYield);
-        refreshData();
+        console.log(transactions.filter(t => t.type === 'Yield').map(t => t.amount))
       });
+      refreshData();
+      console.log('Ta refrescando ainda...');
     }, 3000);
 
     return () => clearInterval(interval);
