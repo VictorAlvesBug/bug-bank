@@ -4,6 +4,7 @@ import { User } from "../types/user.types";
 
 type UserService = ReturnType<typeof createUserService>;
 
+
 export default function useUsersState() {
   const baseService = React.useMemo(() => createUserService(), []);
 
@@ -36,5 +37,5 @@ export default function useUsersState() {
     });
   }, [baseService, refreshUsers]);
 
-  return { users, userService, refreshUsers };
+  return { users, userService };
 }

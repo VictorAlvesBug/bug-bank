@@ -36,5 +36,5 @@ export default function useTransactionsState() {
     });
   }, [baseService, refreshTransactions]);
 
-  return { transactions, transactionService, refreshTransactions };
+  return { transactions, transactionService };
 }

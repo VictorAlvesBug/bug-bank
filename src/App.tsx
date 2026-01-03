@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
-import useAccountsState from './hooks/useAccountsState';
+import { useDataContext } from './context/DataProvider';
 import useIsInvestmentEnabledState from './hooks/useIsInvestmentEnabledState';
-import useTransactionsState from './hooks/useTransactionsState';
-import useUsersState from './hooks/useUsersState';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import { AccountWithBalance } from './types/account.types';
@@ -11,9 +9,7 @@ import { Transaction, Yield } from './types/transaction.types';
 import { User } from './types/user.types';
 
 export default function App() {
-  const {userService} = useUsersState();
-  const {accounts} = useAccountsState();
-  const {transactions, transactionService, refreshTransactions} = useTransactionsState();
+  const {userService, accounts, transactions, transactionService, refreshData} = useDataContext();
 
   const [currentUserIdState, setCurrentUserId] = useState<string | null>(null);
   const [isInvestmentEnabledState, toggleInvestmentEnabled] =
@@ -134,12 +130,12 @@ export default function App() {
         );
 
         transactionService.update(lastYield);
-        refreshTransactions();
+        refreshData();
       });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [investmentAccountsState, transactionService, transactions, refreshTransactions]);
+  }, [investmentAccountsState, transactionService, transactions, refreshData]);
 
   if (!cashAccountState) {
     toast.error('Conta de dinheiro físico não encontrada');

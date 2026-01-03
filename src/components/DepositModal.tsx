@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionsState from '../hooks/useTransactionsState';
+import { useDataContext } from '../context/DataProvider';
 import { AccountWithBalance } from '../types/account.types';
 import { DepositOrWithdraw } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
@@ -21,7 +21,8 @@ export default function DepositModal({
 }: DepositModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const {transactionService, refreshTransactions} = useTransactionsState();
+
+  const {transactionService, refreshData} = useDataContext();
 
   useEffect(() => {
     setAmount(0);
@@ -53,7 +54,7 @@ export default function DepositModal({
     };
 
     transactionService.add(deposit);
-    refreshTransactions();
+    refreshData();
 
     toast.success(
       `Depósito de ${formatCentsAsCurrency(amount)} realizado com sucesso`

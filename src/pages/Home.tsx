@@ -10,8 +10,7 @@ import RescueModal from '../components/RescueModal';
 import SendPixModal from '../components/SendPixModal';
 import TransactionCard from '../components/TransactionCard';
 import WithdrawModal from '../components/WithdrawModal';
-import useTransactionsState from '../hooks/useTransactionsState';
-import useUsersState from '../hooks/useUsersState';
+import { useDataContext } from '../context/DataProvider';
 import { AccountWithBalance } from '../types/account.types';
 import { Transaction } from '../types/transaction.types';
 import { User } from '../types/user.types';
@@ -41,8 +40,7 @@ export default function Home({
   const [investmentModalOpen, setInvestmentModalOpen] = useState(false);
   const [rescueModalOpen, setRescueModalOpen] = useState(false);
 
-  const {transactionService} = useTransactionsState();
-  const { users } = useUsersState();
+  const {transactionService, users } = useDataContext();
   const [userAccountIds, setUserAccountIds] = useState<string[]>([]);
   const [userTransactions, setUserTransactions] = useState<Transaction[]>([]);
 

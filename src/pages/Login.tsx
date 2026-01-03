@@ -9,9 +9,7 @@ import { toast } from 'react-toastify';
 import CashAmountModal from '../components/CashAmountModal';
 import CreateUserModal from '../components/CreateUserModal';
 import UserCard from '../components/UserCard';
-import useAccountsState from '../hooks/useAccountsState';
-import useTransactionsState from '../hooks/useTransactionsState';
-import useUsersState from '../hooks/useUsersState';
+import { useDataContext } from '../context/DataProvider';
 import { AccountWithBalance } from '../types/account.types';
 import { formatCentsAsCurrency } from '../utils/currencyUtils';
 
@@ -31,19 +29,13 @@ export default function Login({
 }: LoginProps) {
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [cashAmountModalOpen, setCashAmountModalOpen] = useState(false);
-
-  const { users, userService, refreshUsers } = useUsersState();
-  const { accounts, accountService, refreshAccounts } = useAccountsState();
-  const { transactionService, refreshTransactions } = useTransactionsState();
-
+  const { users, userService, accounts, accountService, transactionService, refreshData } = useDataContext();
   function handleResetApp() {
     userService.reset();
     accountService.reset();
     transactionService.reset();
 
-    refreshUsers();
-    refreshAccounts();
-    refreshTransactions();
+    refreshData();
     toast.success(`Os dados do aplicativo foram limpos`);
   }
 

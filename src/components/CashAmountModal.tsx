@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useAccountsState from '../hooks/useAccountsState';
+import { useDataContext } from '../context/DataProvider';
 import { AccountWithBalance, Cash } from '../types/account.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
@@ -18,7 +18,8 @@ export default function CashAmountModal({
 }: CashAmountModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const { accountService, refreshAccounts } = useAccountsState();
+  
+  const { accountService, refreshData } = useDataContext();
 
   useEffect(() => {
     setAmount(0);
@@ -54,7 +55,7 @@ export default function CashAmountModal({
     newCashAccount.initialBalance = amount;
 
     accountService.update(newCashAccount);
-    refreshAccounts();
+    refreshData();
 
     toast.success(
       `Valor total em dinheiro redefinido para ${formatCentsAsCurrency(amount)}`

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionsState from '../hooks/useTransactionsState';
-import useUsersState from '../hooks/useUsersState';
+import { useDataContext } from '../context/DataProvider';
 import { AccountWithBalance } from '../types/account.types';
 import { Pix } from '../types/transaction.types';
 import { User } from '../types/user.types';
@@ -27,8 +26,8 @@ export default function SendPixModal({
   const [pixReceiverUserId, setPixReceiverUserId] = useState<string | null>(
     null
   );
-    const {transactionService, refreshTransactions} = useTransactionsState();
-  const {users, userService} = useUsersState();
+
+    const {transactionService, users, userService, refreshData} = useDataContext();
 
   const [otherUsers, setOtherUsers] = useState<User[]>(users.filter((u) => u.id !== senderAccount.userId));
 
@@ -95,7 +94,7 @@ export default function SendPixModal({
     };
 
     transactionService.add(pix);
-    refreshTransactions();
+    refreshData();
 
     toast.success(
       `Pix de ${formatCentsAsCurrency(amount)} realizado com sucesso`

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import useTransactionsState from '../hooks/useTransactionsState';
+import { useDataContext } from '../context/DataProvider';
 import { AccountWithBalance } from '../types/account.types';
 import { Investment } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
@@ -21,7 +21,7 @@ export default function InvestmentModal({
 }: InvestmentModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const {transactionService, refreshTransactions} = useTransactionsState();
+  const {transactionService, refreshData} = useDataContext();
 
   useEffect(() => {
     setAmount(0);
@@ -53,7 +53,7 @@ export default function InvestmentModal({
     };
 
     transactionService.add(investment);
-    refreshTransactions();
+    refreshData();
 
     toast.success(`Investimento de ${formatCentsAsCurrency(amount)} realizado com sucesso`);
 

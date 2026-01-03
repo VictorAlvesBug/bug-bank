@@ -36,5 +36,5 @@ export default function useAccountsState() {
     });
   }, [baseService, refreshAccounts]);
 
-  return { accounts, accountService, refreshAccounts };
+  return { accounts, accountService };
 }

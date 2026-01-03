@@ -5,6 +5,7 @@ import { AccountWithBalance } from '../types/account.types';
 import { Rescue } from '../types/transaction.types';
 import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
+import { useDataContext } from '../context/DataProvider';
 
 type RescueModalProps = {
   isOpen: boolean;
@@ -21,7 +22,7 @@ export default function RescueModal({
 }: RescueModalProps) {
   const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const {transactionService, refreshTransactions} = useTransactionsState();
+  const {transactionService, refreshData} = useDataContext();
 
   useEffect(() => {
     setAmount(0);
@@ -55,7 +56,7 @@ export default function RescueModal({
     console.log(rescue);
 
     transactionService.add(rescue);
-    refreshTransactions();
+    refreshData();
 
     toast.success(
       `Resgate de ${formatCentsAsCurrency(amount)} realizado com sucesso`
