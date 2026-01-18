@@ -5,6 +5,7 @@ import useUsersState from '../hooks/useUsersState';
 import { AccountWithBalance } from '../types/account.types';
 import { Transaction } from '../types/transaction.types';
 import { User } from '../types/user.types';
+import useIsInvestmentEnabledState from '../hooks/useIsInvestmentEnabledState';
 
 
  type ExtractService<T, K extends string> = T extends Record<K, infer U> ? U : never;
@@ -29,6 +30,7 @@ export default function DataProvider({ children }: DataProviderProps) {
     const { userService } = useUsersState();
     const { accountService } = useAccountsState();
     const { transactionService } = useTransactionsState();
+    const { investmentEnabledReset } = useIsInvestmentEnabledState();
 
     const [users, setUsers] = useState<User[]>(userService.listAll());
     const [accounts, setAccounts] = useState<AccountWithBalance[]>(accountService.listAll());
@@ -39,7 +41,8 @@ export default function DataProvider({ children }: DataProviderProps) {
         setUsers(userService.listAll());
         setAccounts(accountService.listAll());
         setTransactions(transactionService.listAll());
-    }, [accountService, transactionService, userService]);
+        investmentEnabledReset();
+    }, [accountService, investmentEnabledReset, transactionService, userService]);
 
     const value: DataContextValue = {
         users,

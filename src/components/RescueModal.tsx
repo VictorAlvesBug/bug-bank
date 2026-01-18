@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { useDataContext } from '../context/DataProvider';
 import { AccountWithBalance } from '../types/account.types';
 import { Rescue } from '../types/transaction.types';
-import { formatCentsAsCurrency, getRawCents } from '../utils/currencyUtils';
+import { formatCentsAsCurrency } from '../utils/currencyUtils';
 import Modal from './Common/Modal';
 
 type RescueModalProps = {
@@ -19,21 +19,23 @@ export default function RescueModal({
   checkingAccount,
   onClose,
 }: RescueModalProps) {
-  const [amount, setAmount] = useState(0);
+  //const [amount, setAmount] = useState(0);
   const [error, setError] = useState('');
-  const {transactionService, refreshData} = useDataContext();
+  const { transactionService, refreshData } = useDataContext();
 
   useEffect(() => {
-    setAmount(0);
+    //setAmount(0);
     setError('');
-  }, [isOpen, setAmount, setError]);
+  }, [isOpen, /*setAmount, */setError]);
 
   if (!isOpen) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (isNaN(amount) || amount <= 0) {
+    
+
+    /*if (isNaN(amount) || amount <= 0) {
       setError('Informe um valor maior que zero.');
       return;
     }
@@ -41,7 +43,9 @@ export default function RescueModal({
     if (amount > investmentAccount.balance) {
       setError('Saldo investido insuficiente para resgate.');
       return;
-    }
+    }*/
+
+      const amount = investmentAccount.balance;
 
     const rescue: Rescue = {
       id: crypto.randomUUID(),
@@ -51,8 +55,6 @@ export default function RescueModal({
       amount,
       createdAt: new Date().toISOString(),
     };
-
-    console.log(rescue);
 
     transactionService.add(rescue);
     refreshData();
@@ -75,8 +77,11 @@ export default function RescueModal({
           {formatCentsAsCurrency(investmentAccount.balance)}
         </span>
       </p>
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-3"
+      >
+        {/* <div className="relative">
           <label className="block mb-1 text-xs font-medium text-slate-700">
             Valor
           </label>
@@ -92,7 +97,13 @@ export default function RescueModal({
             }}
             autoFocus
           />
-        </div>
+          <span
+            className='absolute font-semibold text-indigo-600 transform cursor-pointer right-3 bottom-2'
+            onClick={() => setAmount(investmentAccount.balance)}
+          >
+            MÁX
+          </span>
+        </div> */}
 
         {error && <p className="text-xs text-red-500">{error}</p>}
 
@@ -108,7 +119,7 @@ export default function RescueModal({
             type="submit"
             className="px-3 py-1.5 text-xs rounded-lg bg-indigo-600 text-white hover:bg-indigo-500"
           >
-            Confirmar
+            Resgatar tudo
           </button>
         </div>
       </form>

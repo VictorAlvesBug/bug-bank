@@ -115,7 +115,7 @@ export default function SendPixModal({
         </span>
       </p>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div>
+        <div className="relative">
           <label className="block mb-1 text-xs font-medium text-slate-700">
             Valor
           </label>
@@ -131,6 +131,12 @@ export default function SendPixModal({
             }}
             autoFocus
           />
+          <span
+            className='absolute font-semibold text-indigo-600 transform cursor-pointer right-3 bottom-2'
+            onClick={() => setAmount(senderAccount.balance)}
+          >
+            MÁX
+          </span>
         </div>
 
         <div>

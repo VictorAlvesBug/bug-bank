@@ -18,7 +18,7 @@ export default function App() {
   } = useDataContext();
 
   const [currentUserIdState, setCurrentUserId] = useState<string | null>(null);
-  const [isInvestmentEnabledState, toggleInvestmentEnabled] =
+  const{isInvestmentEnabled, toggleInvestmentEnabled} =
     useIsInvestmentEnabledState();
 
   const [currentUserState, setCurrentUser] = useState<User | null>(null);
@@ -51,7 +51,6 @@ export default function App() {
         if (tran.receiverAccountId === account.id) return balance + tran.amount;
         return balance - tran.amount;
       }, account.initialBalance);
-
       return { ...account, balance };
     });
 
@@ -133,23 +132,17 @@ export default function App() {
         lastYield.amount =
           investmentBalanceWithoutLastYield *
           (Math.pow(1 + yieldRateInAHour, diffInHours) - 1);
-
-        lastYield.amount = Math.floor(
-          lastYield.amount /*- (lastYield.amount % 100)*/
-        );
-
-        transactionService.update(lastYield);
-        console.log(transactions.filter(t => t.type === 'Yield').map(t => t.amount))
+          
+        transactionService.save(lastYield);
       });
       refreshData();
-      console.log('Ta refrescando ainda...');
     }, 3000);
 
     return () => clearInterval(interval);
   }, [investmentAccountsState, transactionService, transactions, refreshData]);
 
   if (!cashAccountState) {
-    toast.error('Conta de dinheiro físico não encontrada');
+    //toast.error('Conta de dinheiro físico não encontrada');
     return null;
   }
 
@@ -179,7 +172,7 @@ export default function App() {
         <Login
           cashAccount={cashAccountState}
           accounts={nonCashAccountsState}
-          isInvestmentEnabled={isInvestmentEnabledState}
+          isInvestmentEnabled={isInvestmentEnabled}
           onToggleInvestmentEnabled={toggleInvestmentEnabled}
           onSelectUser={setCurrentUserId}
         />
@@ -196,7 +189,7 @@ export default function App() {
         checkingAccount={currentCheckingAccountState}
         investmentAccount={currentInvestmentAccountState}
         allAccounts={nonCashAccountsState}
-        isInvestmentEnabled={isInvestmentEnabledState}
+        isInvestmentEnabled={isInvestmentEnabled}
         onLogout={() => setCurrentUserId(null)}
       />
     </>

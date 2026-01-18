@@ -1,12 +1,12 @@
 import {
-  faArrowTrendUp,
   faPlus,
-  faTrash,
+  faTrash
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import CashAmountModal from '../components/CashAmountModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 import CreateUserModal from '../components/CreateUserModal';
 import UserCard from '../components/UserCard';
 import { useDataContext } from '../context/DataProvider';
@@ -29,6 +29,8 @@ export default function Login({
 }: LoginProps) {
   const [createUserModalOpen, setCreateUserModalOpen] = useState(false);
   const [cashAmountModalOpen, setCashAmountModalOpen] = useState(false);
+  const [confirmationResetAppModalOpen, setConfirmationResetAppModalOpen] = useState(false);
+
   const { users, userService, accounts, accountService, transactionService, refreshData } = useDataContext();
   function handleResetApp() {
     userService.reset();
@@ -47,7 +49,7 @@ export default function Login({
             <h1 className="text-xl font-semibold text-slate-900">Bug Bank</h1>
             <p className="text-xs text-slate-500">Selecione um usuário</p>
           </div>
-          <button
+          {/* <button
             className={
               'px-2 py-1 text-xs border rounded-full ' +
               (isInvestmentEnabled
@@ -57,10 +59,10 @@ export default function Login({
             onClick={() => onToggleInvestmentEnabled()}
           >
             <FontAwesomeIcon icon={faArrowTrendUp} />
-          </button>
+          </button> */}
           <button
             className="px-2 py-1 text-xs text-red-500 border border-red-200 rounded-full hover:bg-red-50"
-            onClick={handleResetApp}
+            onClick={() => setConfirmationResetAppModalOpen(true)}
           >
             <FontAwesomeIcon icon={faTrash} />
           </button>
@@ -134,6 +136,12 @@ export default function Login({
         isOpen={cashAmountModalOpen}
         cashAccount={cashAccount}
         onClose={() => setCashAmountModalOpen(false)}
+      />
+      <ConfirmationModal
+        isOpen={confirmationResetAppModalOpen}
+        text="Gostaria de reiniciar o app? Todos os dados serão perdidos."
+        onConfirm={handleResetApp}
+        onClose={() => setConfirmationResetAppModalOpen(false)}
       />
     </div>
   );

@@ -49,7 +49,11 @@ export default function Home({
   }, [checkingAccount.id, investmentAccount.id]);
 
   useEffect(() => {
-    setUserTransactions(transactionService.listByAccountIds(userAccountIds));
+    const userTrans = transactionService.listByAccountIds(userAccountIds);
+      userTrans.sort((tranA, tranB) => {
+        return new Date(tranB.createdAt).getTime() - new Date(tranA.createdAt).getTime();
+      });
+    setUserTransactions(userTrans);
   }, [transactionService, userAccountIds, transactions]);
 
   const otherUsers = users.filter((u) => u.id !== user.id);
@@ -75,6 +79,7 @@ export default function Home({
           <CheckingAccountCard checkingAccount={checkingAccount} />
           {isInvestmentEnabled && (
             <InvestmentAccountCard
+              checkingAccount={checkingAccount}
               investmentAccount={investmentAccount}
               onInvestmentOpen={() => setInvestmentModalOpen(true)}
               onRescueOpen={() => setRescueModalOpen(true)}
@@ -87,20 +92,22 @@ export default function Home({
           <div className="flex gap-2">
             <Button
               onClick={() => setDepositModalOpen(true)}
-              className="bg-emerald-500 hover:bg-emerald-400"
+              className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed"
+              disabled={cashAccount.balance === 0}
             >
               Depositar
             </Button>
             <Button
               onClick={() => setWithdrawModalOpen(true)}
-              className="bg-rose-500 hover:bg-rose-400"
+              className="bg-rose-500 hover:bg-rose-400 disabled:opacity-30 disabled:cursor-not-allowed"
+              disabled={checkingAccount.balance === 0}
             >
               Sacar
             </Button>
             <Button
               onClick={() => setSendPixModalOpen(true)}
-              className="bg-indigo-600 shadow rounded-xl hover:bg-indigo-500"
-              disabled={otherUsers.length === 0}
+              className="bg-indigo-600 shadow rounded-xl hover:bg-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed"
+              disabled={otherUsers.length === 0 || checkingAccount.balance === 0}
             >
               Enviar PIX
             </Button>
@@ -123,7 +130,7 @@ export default function Home({
             </p>
           ) : (
             <ul className="space-y-2">
-              {userTransactions.slice(0, 10).map((transaction) => {
+              {userTransactions.map((transaction) => {
                 return (
                   <TransactionCard
                     key={transaction.id}
